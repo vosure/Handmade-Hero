@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdint.h>
 #include <xinput.h>
+#include <dsound.h>
 
 #define internal static
 #define local_persist static
@@ -10,6 +11,8 @@ typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
 typedef int64_t int64;
+
+typedef int32 bool32;
 
 typedef uint8_t uint8;
 typedef uint16_t uint16;
@@ -32,7 +35,7 @@ struct win32_window_dimension
 	int Height;
 };
 
-global_variable bool GlobalRunning;
+global_variable bool32 GlobalRunning;
 global_variable win32_offscreen_buffer GlobalBackBuffer;
 
 /*
@@ -46,7 +49,7 @@ global_variable x_input_get_state *XInputGetState_;
 typedef X_INPUT_GET_STATE(x_input_get_state);
 X_INPUT_GET_STATE(XInputGetStateStub)
 {
-	return(0);
+	return(ERROR_DEVICE_NOT_CONNECTED);
 }
 global_variable x_input_get_state *XInputGetState_ = XInputGetStateStub;
 #define XInputGetState XInputGetState_
@@ -56,20 +59,89 @@ global_variable x_input_get_state *XInputGetState_ = XInputGetStateStub;
 typedef X_INPUT_SET_STATE(x_input_set_state);
 X_INPUT_SET_STATE(XInputSetStateStub)
 {
-	return(0);
+	return(ERROR_DEVICE_NOT_CONNECTED);
 }
 global_variable x_input_set_state *XInputSetState_ = XInputSetStateStub;
 #define XInputSetState XInputSetState_
 
+#define DIRECT_SOUND_CREATE(name) HRESULT WINAPI name(LPCGUID pcGuidDevice, LPDIRECTSOUND *ppDS, LPUNKNOWN pUnkOuter);
+typedef DIRECT_SOUND_CREATE(direct_sound_create);
 internal void
 Win32LoadXInput()
 {
 	HMODULE XInputLibrary =  LoadLibraryA("xinput1_4.dll");
 
+	if (!XInputLibrary)
+		LoadLibraryA("xinput1_3.dll");
+
 	if (XInputLibrary)
 	{ 
 	XInputGetState = (x_input_get_state *) GetProcAddress(XInputLibrary, "XInputGetState");
 	XInputSetState = (x_input_set_state *) GetProcAddress(XInputLibrary, "XInputSetState");
+	}
+}
+
+internal void 
+Win32InitDirectSound(HWND Window, int32 SamplesPerSecond, int32 BufferSize)
+{
+	HMODULE DSoundLibrary = LoadLibrary("dsound.dll");
+
+	if (DSoundLibrary)
+	{
+		direct_sound_create *DirectSoundCreate = (direct_sound_create* )GetProcAddress(DSoundLibrary, "DirectSoundCreate");
+		LPDIRECTSOUND DirectSound;
+		if (DirectSoundCreate && SUCCEEDED( DirectSoundCreate(0, &DirectSound, 0)))
+		{
+			WAVEFORMATEX WaveFormat = {};
+			WaveFormat.wFormatTag = WAVE_FORMAT_PCM;
+			WaveFormat.nChannels = 2;
+			WaveFormat.nSamplesPerSec = SamplesPerSecond;
+			WaveFormat.wBitsPerSample = 16;
+			WaveFormat.nBlockAlign = (WaveFormat.wBitsPerSample * WaveFormat.nChannels) / 8;
+			WaveFormat.nAvgBytesPerSec = WaveFormat.nBlockAlign * WaveFormat.nSamplesPerSec;
+			WaveFormat.cbSize = 0;
+			if (SUCCEEDED(DirectSound->SetCooperativeLevel(Window, DSSCL_PRIORITY)))
+			{
+				DSBUFFERDESC BufferDescription = {};
+				BufferDescription.dwSize = sizeof(BufferDescription);
+				BufferDescription.dwFlags = DSBCAPS_PRIMARYBUFFER;
+
+				LPDIRECTSOUNDBUFFER PrimaryBuffer;
+				if (SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription, &PrimaryBuffer, 0)))
+				{
+					if (SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat)))
+					{
+						OutputDebugStringA("\nPrimary buffer format was set\n");
+					}
+					else
+					{
+					}
+				}
+				else
+				{
+
+				}
+			}
+
+			DSBUFFERDESC BufferDescription = {};
+			BufferDescription.dwSize = sizeof(BufferDescription);
+			BufferDescription.dwFlags = 0;
+			BufferDescription.dwBufferBytes = BufferSize;
+			BufferDescription.lpwfxFormat = &WaveFormat;
+			LPDIRECTSOUNDBUFFER SecondaryBuffer;
+			if (SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription, &SecondaryBuffer, 0)))
+			{
+				OutputDebugStringA("\nSecondary buffer created succesfully\n");
+			}
+		}
+		else
+		{
+			// Diagnostic
+		}
+	}
+	else
+	{
+
 	}
 }
 
@@ -179,8 +251,8 @@ MainWindowCallback(HWND   Window,
 		{
 			uint32 KeyCode = WParam;
 
-			bool KeyWasDown = ((LParam & (1 << 30)) != 0);
-			bool KeyIsDown = ((LParam & (1 << 31)) == 0);
+			bool32 KeyWasDown = ((LParam & (1 << 30)) != 0);
+			bool32 KeyIsDown = ((LParam & (1 << 31)) == 0);
 			
 			if (KeyIsDown != KeyWasDown)
 			{
@@ -221,6 +293,11 @@ MainWindowCallback(HWND   Window,
 				{
 				}
 			}
+
+			bool32 AltKeyDown = ((LParam & (1 << 29)) != 0);
+			if (KeyCode == VK_F4 && AltKeyDown)
+				GlobalRunning = false;
+
 		}break;
 
 		case WM_PAINT:
@@ -282,6 +359,8 @@ WinMain(HINSTANCE Instance,
 			int XOffset = 0;
 			int YOffset = 0;
 
+			Win32InitDirectSound(Window, 4800, 4800 * sizeof(int32) * 2);
+
 			GlobalRunning = true;
 			while(GlobalRunning)
 			{
@@ -303,19 +382,19 @@ WinMain(HINSTANCE Instance,
 						// Controller is Plugged in
 						XINPUT_GAMEPAD *Gamepad = &ControllerState.Gamepad;
 
-						bool UP = (Gamepad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
-						bool DOWN = (Gamepad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
-						bool LEFT = (Gamepad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
-						bool RIGHT = (Gamepad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
-						bool START = (Gamepad->wButtons & XINPUT_GAMEPAD_START);
-						bool BACK = (Gamepad->wButtons & XINPUT_GAMEPAD_BACK);
-						bool LEFT_THUMB = (Gamepad->wButtons & XINPUT_GAMEPAD_LEFT_THUMB);
-						bool RIGHT_THUMB = (Gamepad->wButtons & XINPUT_GAMEPAD_RIGHT_THUMB);
-						bool LEFT_SHOULDER = (Gamepad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
-						bool A_BUTTON = (Gamepad->wButtons & XINPUT_GAMEPAD_A);
-						bool B_BUTTON = (Gamepad->wButtons & XINPUT_GAMEPAD_B);
-						bool X_BUTTON = (Gamepad->wButtons & XINPUT_GAMEPAD_X);
-						bool Y_BUTTON = (Gamepad->wButtons & XINPUT_GAMEPAD_Y);
+						bool32 UP = (Gamepad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
+						bool32 DOWN = (Gamepad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
+						bool32 LEFT = (Gamepad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
+						bool32 RIGHT = (Gamepad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
+						bool32 START = (Gamepad->wButtons & XINPUT_GAMEPAD_START);
+						bool32 BACK = (Gamepad->wButtons & XINPUT_GAMEPAD_BACK);
+						bool32 LEFT_THUMB = (Gamepad->wButtons & XINPUT_GAMEPAD_LEFT_THUMB);
+						bool32 RIGHT_THUMB = (Gamepad->wButtons & XINPUT_GAMEPAD_RIGHT_THUMB);
+						bool32 LEFT_SHOULDER = (Gamepad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
+						bool32 A_BUTTON = (Gamepad->wButtons & XINPUT_GAMEPAD_A);
+						bool32 B_BUTTON = (Gamepad->wButtons & XINPUT_GAMEPAD_B);
+						bool32 X_BUTTON = (Gamepad->wButtons & XINPUT_GAMEPAD_X);
+						bool32 Y_BUTTON = (Gamepad->wButtons & XINPUT_GAMEPAD_Y);
 
 						uint16 LEFT_STICK_X = Gamepad->sThumbLX;
 						uint16 LEFT_STICK_Y = Gamepad->sThumbLX;
