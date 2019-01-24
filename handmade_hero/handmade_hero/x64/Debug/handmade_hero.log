@@ -1,3 +1,3 @@
 ﻿  win32_handmade.cpp
-c:\handmade_hero\handmade_hero\handmade_hero\win32_handmade.cpp(252): warning C4244: 'initializing': conversion from 'WPARAM' to 'uint32', possible loss of data
+c:\handmade_hero\handmade_hero\handmade_hero\win32_handmade.cpp(308): warning C4244: 'initializing': conversion from 'WPARAM' to 'uint32', possible loss of data
   handmade_hero.vcxproj -> C:\handmade_hero\handmade_hero\x64\Debug\handmade_hero.exe
