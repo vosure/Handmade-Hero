@@ -19,4 +19,18 @@
       <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="handmade.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="linux_handmade.cpp">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="defines.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="handmade.cpp">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

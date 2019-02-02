@@ -1,3 +1,29 @@
-﻿  win32_handmade.cpp
-c:\handmade_hero\handmade_hero\handmade_hero\win32_handmade.cpp(308): warning C4244: 'initializing': conversion from 'WPARAM' to 'uint32', possible loss of data
-  handmade_hero.vcxproj -> C:\handmade_hero\handmade_hero\x64\Debug\handmade_hero.exe
+﻿  handmade.cpp
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.h(11): error C2144: syntax error: 'void' should be preceded by ';'
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.h(11): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(4): error C2144: syntax error: 'void' should be preceded by ';'
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(4): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(4): error C2086: 'int internal': redefinition
+  c:\handmade_hero\handmade_hero\handmade_hero\handmade.h(11): note: see declaration of 'internal'
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(6): error C2065: 'uint8': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(6): error C2065: 'Row': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(6): error C2059: syntax error: ')'
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(9): error C2065: 'uint32': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(9): error C2065: 'Pixel': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(9): error C2059: syntax error: ')'
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(12): error C2065: 'uint8': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(12): error C2146: syntax error: missing ';' before identifier 'Blue'
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(12): error C2065: 'Blue': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(13): error C2065: 'uint8': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(13): error C2146: syntax error: missing ';' before identifier 'Red'
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(13): error C2065: 'Red': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(15): error C2065: 'Pixel': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(15): error C2065: 'Red': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(15): error C2065: 'Blue': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(17): error C2065: 'Row': undeclared identifier
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(22): error C2144: syntax error: 'void' should be preceded by ';'
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+c:\handmade_hero\handmade_hero\handmade_hero\handmade.cpp(22): error C2086: 'int internal': redefinition
+  c:\handmade_hero\handmade_hero\handmade_hero\handmade.h(11): note: see declaration of 'internal'
+  win32_handmade.cpp
+  Generating Code...

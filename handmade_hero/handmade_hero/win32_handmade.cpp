@@ -3,6 +3,7 @@
 #include <xinput.h>
 #include <dsound.h>
 #include <math.h>
+#include <stdio.h>
 
 #define internal static
 #define local_persist static
@@ -24,6 +25,8 @@ typedef uint32_t uint64;
 
 typedef float real32;
 typedef double real64;
+
+#include "handmade.cpp"
 
 struct win32_offscreen_buffer
 {
@@ -175,24 +178,6 @@ Win32GetWindowDimension(HWND Window)
 	Dimension.Height = ClientRect.bottom - ClientRect.top;
 
 	return(Dimension);
-}
-
-internal void
-RenderWierdGradent(win32_offscreen_buffer *Buffer, int XOffset, int YOffset)
-{
-	uint8 *Row = (uint8 *)Buffer->Memory;
-	for (int Y = 0; Y < Buffer->Height; ++Y)
-	{
-		uint32 *Pixel = (uint32 *)Row;
-		for (int X = 0; X < Buffer->Width; ++X)
-		{
-			uint8 Blue = X + XOffset;
-			uint8 Red = Y + YOffset;
-
-			*Pixel++ = (Red << 16 | Blue);
-		}
-		Row += Buffer->Pitch;
-	}
 }
 
 internal void
@@ -384,6 +369,10 @@ WinMain(HINSTANCE Instance,
 	LPSTR     CommandLine,
 	int       ShowCode)
 {
+	LARGE_INTEGER PerformanceCountFrequencyResult;
+	QueryPerformanceFrequency(&PerformanceCountFrequencyResult);
+	int64 PerformanceCountFrequency = PerformanceCountFrequencyResult.QuadPart;
+
 	Win32LoadXInput();
 
 	WNDCLASSA WindowClass = {};
@@ -433,6 +422,11 @@ WinMain(HINSTANCE Instance,
 			bool32 SoundIsPlaying = true;
 
 			GlobalRunning = true;
+
+			LARGE_INTEGER LastCounter;
+			QueryPerformanceCounter(&LastCounter);
+
+			int64 LastCycleCount = __rdtsc();
 			while (GlobalRunning)
 			{
 				MSG Message;
@@ -479,7 +473,12 @@ WinMain(HINSTANCE Instance,
 					}
 				}
 
-				RenderWierdGradent(&GlobalBackBuffer, XOffset, YOffset);
+				game_offscreen_buffer Buffer;
+				Buffer.Memory = GlobalBackBuffer.Memory;
+				Buffer.Width = GlobalBackBuffer.Width;
+				Buffer.Height = GlobalBackBuffer.Height;
+				Buffer.Pitch = GlobalBackBuffer.Pitch;
+				GameUpdateAndRender(&Buffer);
 
 				DWORD PlayCursor;
 				DWORD WriteCursor;
@@ -507,8 +506,24 @@ WinMain(HINSTANCE Instance,
 				win32_window_dimension Dimension = Win32GetWindowDimension(Window);
 				Win32DisplayBufferInWindow(&GlobalBackBuffer, DeviceContext, Dimension.Width, Dimension.Height);
 				ReleaseDC(Window, DeviceContext);
-				++XOffset;
-				--YOffset;
+
+				int64 EndCycleCount = __rdtsc();
+
+				LARGE_INTEGER EndCounter;
+				QueryPerformanceCounter(&EndCounter);
+
+				int32 CyclesElapled = EndCycleCount - LastCycleCount;
+				int64 CounterElapsed = EndCounter.QuadPart - LastCounter.QuadPart;
+				int32 MSPerFrame = (int32)(((1000 * CounterElapsed) / PerformanceCountFrequency));
+				int32 FPS = PerformanceCountFrequency / CounterElapsed;
+				int32 MCPF = (int32)(CyclesElapled / (1000 * 1000));
+
+				char StringBuffer[256];
+				wsprintf(StringBuffer, "%dms/f, %df/s, %dmc/f\n", MSPerFrame, FPS, MCPF);
+				OutputDebugStringA(StringBuffer);
+
+				LastCounter = EndCounter;
+				LastCycleCount = EndCycleCount;
 			}
 		}
 		else
