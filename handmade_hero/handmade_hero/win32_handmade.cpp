@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <malloc.h>
 #include <stdint.h>
 #include <xinput.h>
 #include <dsound.h>
@@ -218,7 +219,30 @@ Win32DisplayBufferInWindow(win32_offscreen_buffer *Buffer, HDC DeviceContext,
 		DIB_RGB_COLORS, SRCCOPY);
 }
 
-internal void Win32FillSoundBuffer(win32_sound_output *SoundOutput, DWORD BytesToLock, DWORD BytesToWrite)
+internal void Win32ClearSoundBuffer(win32_sound_output *SoundOutput)
+{
+	VOID *Region1;
+	DWORD Region1Size;
+	VOID *Region2;
+	DWORD Region2Size;
+	if (SUCCEEDED(GlobalSecondaryBuffer->Lock(0, SoundOutput->SecondaryBufferSize, &Region1, &Region1Size, &Region2, &Region2Size, 0)))
+	{
+		uint8 *DestSample = (uint8*)Region1;
+		for (DWORD ByteIndex = 0; ByteIndex < Region1Size; ++ByteIndex)
+		{
+			*DestSample++ = 0;
+		}
+		DestSample = (uint8*)Region2;
+		for (DWORD ByteIndex = 0; ByteIndex < Region2Size; ++ByteIndex)
+		{
+			*DestSample++ = 0;
+		}
+		GlobalSecondaryBuffer->Unlock(Region1, Region1Size, Region2, Region2Size);
+	}
+
+}
+
+internal void Win32FillSoundBuffer(win32_sound_output *SoundOutput, DWORD BytesToLock, DWORD BytesToWrite, game_sound_output_buffer *SourceBuffer)
 {
 	VOID *Region1;
 	DWORD Region1Size;
@@ -226,28 +250,23 @@ internal void Win32FillSoundBuffer(win32_sound_output *SoundOutput, DWORD BytesT
 	DWORD Region2Size;
 	if (SUCCEEDED(GlobalSecondaryBuffer->Lock(BytesToLock, BytesToWrite, &Region1, &Region1Size, &Region2, &Region2Size, 0)))
 	{
-		int16 *SampleOut = (int16 *)Region1;
+		int16 *DestSample = (int16*)Region1;
+		int16 *SourseSample = SourceBuffer->Samples;
 		DWORD Region1SampleCount = Region1Size / SoundOutput->BytesPerSample;
 
 		for (DWORD SampleIndex = 0; SampleIndex < Region1SampleCount; ++SampleIndex)
 		{
-			real32 SineValue = sinf(SoundOutput->tSine);
-			int16 SampleValue = (int16)(SineValue * SoundOutput->ToneVolume);
-			*SampleOut++ = SampleValue;
-			*SampleOut++ = SampleValue;
-			SoundOutput->tSine += 2.0f * Pi32 * 1.0f / (real32)SoundOutput->WavePeriod;
+			*DestSample++ = *SourseSample++;
+			*DestSample++ = *SourseSample++;
 			++SoundOutput->RunningSampleIndex;
 		}
 
-		SampleOut = (int16 *)Region2;
+		DestSample = (int16 *)Region2;
 		DWORD Region2SampleCount = Region2Size / SoundOutput->BytesPerSample;
 		for (DWORD SampleIndex = 0; SampleIndex < Region2SampleCount; ++SampleIndex)
 		{
-			real32 SineValue = sinf(SoundOutput->tSine);
-			int16 SampleValue = (int16)(SineValue * SoundOutput->ToneVolume);
-			*SampleOut++ = SampleValue;
-			*SampleOut++ = SampleValue;
-			SoundOutput->tSine += 2.0f * Pi32 * 1.0f / (real32)SoundOutput->WavePeriod;
+			*DestSample++ = *SourseSample++;
+			*DestSample++ = *SourseSample++;
 			++SoundOutput->RunningSampleIndex;
 		}
 
@@ -417,7 +436,7 @@ WinMain(HINSTANCE Instance,
 			SoundOutput.SecondaryBufferSize = SoundOutput.SamplesPerSecond * SoundOutput.BytesPerSample;
 			SoundOutput.LatencySampleCount = SoundOutput.SamplesPerSecond / 15;
 			Win32InitDirectSound(Window, SoundOutput.SamplesPerSecond, SoundOutput.SecondaryBufferSize);
-			Win32FillSoundBuffer(&SoundOutput, 0, SoundOutput.LatencySampleCount * SoundOutput.BytesPerSample);
+			Win32ClearSoundBuffer(&SoundOutput);
 			GlobalSecondaryBuffer->Play(0, 0, DSBPLAY_LOOPING);
 			bool32 SoundIsPlaying = true;
 
@@ -473,20 +492,17 @@ WinMain(HINSTANCE Instance,
 					}
 				}
 
-				game_offscreen_buffer Buffer;
-				Buffer.Memory = GlobalBackBuffer.Memory;
-				Buffer.Width = GlobalBackBuffer.Width;
-				Buffer.Height = GlobalBackBuffer.Height;
-				Buffer.Pitch = GlobalBackBuffer.Pitch;
-				GameUpdateAndRender(&Buffer);
-
+				DWORD BytesToLock;
+				DWORD BytesToWrite;
+				DWORD TargetCursor;
 				DWORD PlayCursor;
 				DWORD WriteCursor;
+				bool32 SoundIsValid = false;
 				if (SUCCEEDED(GlobalSecondaryBuffer->GetCurrentPosition(&PlayCursor, &WriteCursor)))
 				{
-					DWORD BytesToLock = ((SoundOutput.RunningSampleIndex * SoundOutput.BytesPerSample) % SoundOutput.SecondaryBufferSize);
-					DWORD BytesToWrite;
-					DWORD TargetCursor = (PlayCursor + (SoundOutput.LatencySampleCount * SoundOutput.BytesPerSample)) % SoundOutput.SecondaryBufferSize;
+					SoundIsValid = true;
+					BytesToLock = ((SoundOutput.RunningSampleIndex * SoundOutput.BytesPerSample) % SoundOutput.SecondaryBufferSize);
+					TargetCursor = (PlayCursor + (SoundOutput.LatencySampleCount * SoundOutput.BytesPerSample)) % SoundOutput.SecondaryBufferSize;
 					if (BytesToLock > TargetCursor)
 					{
 						BytesToWrite = SoundOutput.SecondaryBufferSize - BytesToLock;
@@ -496,12 +512,23 @@ WinMain(HINSTANCE Instance,
 					{
 						BytesToWrite = TargetCursor - BytesToLock;
 					}
-					Win32FillSoundBuffer(&SoundOutput, BytesToLock, BytesToWrite);
 				}
-				if (!SoundIsPlaying)
+				int16 *Sample = (int16 *) VirtualAlloc(0, SoundOutput.SecondaryBufferSize, MEM_COMMIT, PAGE_READWRITE);
+				game_sound_output_buffer SoundBuffer = {};
+				SoundBuffer.SamplesPerSecond = SoundOutput.SamplesPerSecond;
+				SoundBuffer.SampleCount = BytesToWrite / SoundOutput.BytesPerSample;
+				SoundBuffer.Samples = Sample;
+
+				game_offscreen_buffer Buffer;
+				Buffer.Memory = GlobalBackBuffer.Memory;
+				Buffer.Width = GlobalBackBuffer.Width;
+				Buffer.Height = GlobalBackBuffer.Height;
+				Buffer.Pitch = GlobalBackBuffer.Pitch;
+				GameUpdateAndRender(&Buffer, XOffset++, YOffset--, &SoundBuffer, SoundOutput.ToneHz);
+
+				if (SoundIsValid)
 				{
-					GlobalSecondaryBuffer->Play(0, 0, DSBPLAY_LOOPING);
-					SoundIsPlaying = true;
+					Win32FillSoundBuffer(&SoundOutput, BytesToLock, BytesToWrite, &SoundBuffer);
 				}
 				win32_window_dimension Dimension = Win32GetWindowDimension(Window);
 				Win32DisplayBufferInWindow(&GlobalBackBuffer, DeviceContext, Dimension.Width, Dimension.Height);
@@ -518,9 +545,9 @@ WinMain(HINSTANCE Instance,
 				int32 FPS = PerformanceCountFrequency / CounterElapsed;
 				int32 MCPF = (int32)(CyclesElapled / (1000 * 1000));
 
-				char StringBuffer[256];
-				wsprintf(StringBuffer, "%dms/f, %df/s, %dmc/f\n", MSPerFrame, FPS, MCPF);
-				OutputDebugStringA(StringBuffer);
+				char InformationString[256];
+				wsprintf(InformationString, "%dms/f, %df/s, %dmc/f\n", MSPerFrame, FPS, MCPF);
+				OutputDebugStringA(InformationString);
 
 				LastCounter = EndCounter;
 				LastCycleCount = EndCycleCount;
