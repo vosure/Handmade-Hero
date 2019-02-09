@@ -121,6 +121,7 @@
     <ClInclude Include="handmade.cpp" />
     <ClInclude Include="linux_handmade.cpp" />
     <ClCompile Include="win32_handmade.cpp" />
+    <ClInclude Include="win32_handmade.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="handmade.h" />
