@@ -1,5 +1,16 @@
 #if !defined(HANDMADE_H)
 
+#if HANDMADE_SLOW
+#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
+#else
+#define Assert(Expression)
+#endif
+
+#define Kilobytes(Value) ((Value)*1024L)
+#define Megabytes(Value) (Kilobytes(Value)*1024L)
+#define Gigabytes(Value) (Megabytes(Value)*1024L)
+#define Terabytes(Value) (Gigabytes(Value)*1024L)
+
 #define ArrayCount(Array) sizeof(Array) / sizeof((Array)[0])
 
 struct game_offscreen_buffer
@@ -17,7 +28,7 @@ struct game_sound_output_buffer
 	int16 *Samples;
 };
 
-struct game_button_state 
+struct game_button_state
 {
 	int32 HalfTransitionCount;
 	bool32 EndedDown;
@@ -42,7 +53,7 @@ struct game_controller_input
 	union
 	{
 		game_button_state Buttons[6];
-		struct 
+		struct
 		{
 			game_button_state UP;
 			game_button_state DOWN;
@@ -59,7 +70,25 @@ struct game_input
 	game_controller_input Controllers[4];
 };
 
-internal void GameUpdateAndRender(game_offscreen_buffer *Buffer, game_sound_output_buffer *SoundBuffer, game_input *Input);
+struct game_memory
+{
+	bool32 IsInitialized;
+
+	uint64 PermanentStorageSize;
+	void* PermamentStrorage;
+
+	uint64 TransientStorageSize;
+	void* TransientStrorage;
+};
+
+struct game_state
+{
+	int BlueOffset;
+	int GreenOffset;
+	int32 ToneHz;
+};
+
+internal void GameUpdateAndRender(game_memory *Memory, game_offscreen_buffer *Buffer, game_sound_output_buffer *SoundBuffer, game_input *Input);
 
 #define HANDMADE_H
 #endif

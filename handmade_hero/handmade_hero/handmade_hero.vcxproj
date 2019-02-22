@@ -85,7 +85,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions) HANDMADE_WIN32=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;HANDMADE_SLOW=1;HANDMADE_INTERNAL=1;HANDMADE_WIN32=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

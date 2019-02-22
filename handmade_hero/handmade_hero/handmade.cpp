@@ -1,6 +1,6 @@
 #include "handmade.h"
 
-internal void 
+internal void
 GameSoundOutput(game_sound_output_buffer *SoundBuffer, int32 ToneHz)
 {
 	local_persist real32 tSine;
@@ -37,25 +37,33 @@ RenderWierdGradient(game_offscreen_buffer *Buffer, int XOffset, int YOffset)
 }
 
 internal void
-GameUpdateAndRender(game_offscreen_buffer *Buffer, game_sound_output_buffer *SoundBuffer, game_input *Input)
+GameUpdateAndRender(game_memory *Memory, game_offscreen_buffer *Buffer, game_sound_output_buffer *SoundBuffer, game_input *Input)
 {
-	local_persist int BlueOffset = 0;
-	local_persist int GreenOffset = 0;
-	local_persist int32 ToneHz = 256;
+	Assert(sizeof(game_state) <= Memory->PermanentStorageSize);
+
+	game_state *GameState = (game_state *)Memory->PermamentStrorage;
+	if (!Memory->IsInitialized)
+	{
+		GameState->ToneHz = 256;
+		GameState->GreenOffset = 0;
+		GameState->BlueOffset = 0;
+
+		Memory->IsInitialized = true;
+	}
 
 	game_controller_input *Input0 = &Input->Controllers[0];
 	if (Input0->IsAnalog)
 	{
-		ToneHz = 256 + (int)(128.0f*(Input0->EndX));
-		BlueOffset += (int)4.0f*(Input0->EndY);
+		GameState->ToneHz = 256 + (int)(128.0f*(Input0->EndX));
+		GameState->BlueOffset += (int)4.0f*(Input0->EndY);
 	}
 	else
 	{
 	}
 	if (Input0->DOWN.EndedDown)
 	{
-		GreenOffset++;
+		GameState->GreenOffset++;
 	}
-	GameSoundOutput(SoundBuffer, ToneHz);
-	RenderWierdGradient(Buffer, BlueOffset, GreenOffset);
+	GameSoundOutput(SoundBuffer, GameState->ToneHz);
+	RenderWierdGradient(Buffer, GameState->BlueOffset, GameState->GreenOffset);
 }
