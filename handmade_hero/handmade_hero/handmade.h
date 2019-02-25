@@ -6,6 +6,21 @@
 #define Assert(Expression)
 #endif
 
+#if HANDMADE_INTERNAL
+struct debug_read_file_result
+{
+	uint32 ContentSize;
+	void *Contents;
+
+};
+internal debug_read_file_result DEBUGPlatformReadEntireFile(char *FileName);
+internal void DEGUBPlatformFreeFileMemory(void *Memory);
+internal bool32 DEBUGPlatformWriteEntireFile(char *FileName, uint32 MemorySize, void *Memory);
+
+
+#endif 
+
+
 #define Kilobytes(Value) ((Value)*1024L)
 #define Megabytes(Value) (Kilobytes(Value)*1024L)
 #define Gigabytes(Value) (Megabytes(Value)*1024L)
