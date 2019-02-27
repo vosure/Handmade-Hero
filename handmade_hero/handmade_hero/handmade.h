@@ -98,8 +98,8 @@ struct game_memory
 
 struct game_state
 {
-	int BlueOffset;
-	int GreenOffset;
+	int32 BlueOffset;
+	int32 GreenOffset;
 	int32 ToneHz;
 };
 

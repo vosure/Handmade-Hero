@@ -1,0 +1,6 @@
+﻿  win32_handmade.cpp
+c:\handmade_hero\handmade_hero\handmade_hero\win32_handmade.cpp(80): warning C4244: 'argument': conversion from 'LONGLONG' to 'uint64', possible loss of data
+c:\handmade_hero\handmade_hero\handmade_hero\win32_handmade.cpp(508): warning C4307: '*': integral constant overflow
+c:\handmade_hero\handmade_hero\handmade_hero\win32_handmade.cpp(514): warning C4307: '*': integral constant overflow
+c:\handmade_hero\handmade_hero\handmade_hero\win32_handmade.cpp(664): warning C4244: 'initializing': conversion from 'int64' to 'int32', possible loss of data
+  handmade_hero.vcxproj -> C:\handmade_hero\handmade_hero\Debug\handmade_hero.exe

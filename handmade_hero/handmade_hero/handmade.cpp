@@ -35,8 +35,8 @@ RenderWierdGradient(game_offscreen_buffer *Buffer, int XOffset, int YOffset)
 		uint32 *Pixel = (uint32 *)Row;
 		for (int X = 0; X < Buffer->Width; ++X)
 		{
-			uint8 Blue = X + XOffset;
-			uint8 Red = Y + YOffset;
+			uint8 Blue = (uint8)(X + XOffset);
+			uint8 Red = (uint8)(Y + YOffset);
 
 			*Pixel++ = (Red<< 16 & Blue << 16);
 		}
@@ -68,8 +68,8 @@ GameUpdateAndRender(game_memory *Memory, game_offscreen_buffer *Buffer, game_sou
 	game_controller_input *Input0 = &Input->Controllers[0];
 	if (Input0->IsAnalog)
 	{
-		GameState->ToneHz = 256 + (int)(128.0f*(Input0->EndX));
-		GameState->BlueOffset += (int)4.0f*(Input0->EndY);
+		GameState->ToneHz = 256 + (int32) (128.0f*(Input0->EndX));
+		GameState->BlueOffset += (int32) (4.0f*(Input0->EndY));
 	}
 	else
 	{
@@ -78,6 +78,6 @@ GameUpdateAndRender(game_memory *Memory, game_offscreen_buffer *Buffer, game_sou
 	{
 		GameState->GreenOffset++;
 	}
-	GameSoundOutput(SoundBuffer, GameState->ToneHz);
-	RenderWierdGradient(Buffer, GameState->BlueOffset++, GameState->GreenOffset--);
+		GameSoundOutput(SoundBuffer, GameState->ToneHz);
+		RenderWierdGradient(Buffer, GameState->BlueOffset, GameState->GreenOffset);
 }
