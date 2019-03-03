@@ -1,13 +1,5 @@
 #include "handmade.h"
 
-inline uint32
-SafeTruncateUInt64(uint64 Value)
-{
-	Assert(Value <= 0xFFFFFFFFFF);
-	uint32 Result = (uint32)Value;
-	return(Result);
-}
-
 internal void
 GameSoundOutput(game_sound_output_buffer *SoundBuffer, int32 ToneHz)
 {
@@ -38,7 +30,7 @@ RenderWierdGradient(game_offscreen_buffer *Buffer, int XOffset, int YOffset)
 			uint8 Blue = (uint8)(X + XOffset);
 			uint8 Red = (uint8)(Y + YOffset);
 
-			*Pixel++ = (Red<< 16 & Blue << 16);
+			*Pixel++ = (Red << 8 | Blue);
 		}
 		Row += Buffer->Pitch;
 	}
@@ -49,7 +41,7 @@ GameUpdateAndRender(game_memory *Memory, game_offscreen_buffer *Buffer, game_sou
 {
 	Assert(sizeof(game_state) <= Memory->PermanentStorageSize);
 
-	game_state *GameState = (game_state *)Memory->PermamentStrorage;
+	game_state *GameState = (game_state *)Memory->PermanentStorage;
 	if (!Memory->IsInitialized)
 	{
 		//char *FileName = (char *) "test.bmp";
@@ -59,25 +51,42 @@ GameUpdateAndRender(game_memory *Memory, game_offscreen_buffer *Buffer, game_sou
 		if (File.Contents)
 		{
 			DEBUGPlatformWriteEntireFile((char *)"C:/handmade_hero/handmade_hero/data/test.out", File.ContentSize, File.Contents);
-			DEGUBPlatformFreeFileMemory(File.Contents);
+			DEBUGPlatformFreeFileMemory(File.Contents);
 		}
 		GameState->ToneHz = 256;
 		Memory->IsInitialized = true;
 	}
 
-	game_controller_input *Input0 = &Input->Controllers[0];
-	if (Input0->IsAnalog)
+
+	for (int ControllerIndex = 0; ControllerIndex < ArrayCount(Input->Controllers); ++ControllerIndex)
 	{
-		GameState->ToneHz = 256 + (int32) (128.0f*(Input0->EndX));
-		GameState->BlueOffset += (int32) (4.0f*(Input0->EndY));
+		game_controller_input *Controller = GetController(Input, ControllerIndex);
+		if (Controller->IsAnalog)
+		{
+			GameState->ToneHz = 256 + (int32)(128.0f*(Controller->StickAverageX));
+			GameState->BlueOffset += (int32)(4.0f*(Controller->StickAverageY));
+		}
+		else
+		{
+			if (Controller->MOVE_LEFT.EndedDown || Controller->ACTION_LEFT.EndedDown)
+			{
+				GameState->BlueOffset--;
+			}
+			if (Controller->MOVE_RIGHT.EndedDown || Controller->ACTION_RIGHT.EndedDown)
+			{
+				GameState->BlueOffset++;
+			}
+			if (Controller->MOVE_UP.EndedDown || Controller->ACTION_UP.EndedDown)
+			{
+				GameState->GreenOffset++;
+			}
+			if (Controller->MOVE_DOWN.EndedDown || Controller->ACTION_DOWN.EndedDown)
+			{
+				GameState->GreenOffset--;
+			}
+
+		}
 	}
-	else
-	{
-	}
-	if (Input0->DOWN.EndedDown)
-	{
-		GameState->GreenOffset++;
-	}
-		GameSoundOutput(SoundBuffer, GameState->ToneHz);
-		RenderWierdGradient(Buffer, GameState->BlueOffset, GameState->GreenOffset);
+	GameSoundOutput(SoundBuffer, GameState->ToneHz);
+	RenderWierdGradient(Buffer, GameState->BlueOffset, GameState->GreenOffset);
 }

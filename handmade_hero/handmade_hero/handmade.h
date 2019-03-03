@@ -14,19 +14,23 @@ struct debug_read_file_result
 
 };
 internal debug_read_file_result DEBUGPlatformReadEntireFile(char *FileName);
-internal void DEGUBPlatformFreeFileMemory(void *Memory);
+internal void DEBUGPlatformFreeFileMemory(void *Memory);
 internal bool32 DEBUGPlatformWriteEntireFile(char *FileName, uint32 MemorySize, void *Memory);
-
-
 #endif 
 
-
-#define Kilobytes(Value) ((Value)*1024L)
-#define Megabytes(Value) (Kilobytes(Value)*1024L)
-#define Gigabytes(Value) (Megabytes(Value)*1024L)
-#define Terabytes(Value) (Gigabytes(Value)*1024L)
-
+#define Kilobytes(Value) ((Value)*1024LL)
+#define Megabytes(Value) (Kilobytes(Value)*1024LL)
+#define Gigabytes(Value) (Megabytes(Value)*1024LL)
+#define Terabytes(Value) (Gigabytes(Value)*1024LL)
 #define ArrayCount(Array) sizeof(Array) / sizeof((Array)[0])
+
+inline uint32
+SafeTruncateUInt64(uint64 Value)
+{
+	Assert(Value <= 0xFFFFFFFFFF);
+	uint32 Result = (uint32)Value;
+	return(Result);
+}
 
 struct game_offscreen_buffer
 {
@@ -51,49 +55,57 @@ struct game_button_state
 
 struct game_controller_input
 {
+	bool32 IsConnected;
 	bool32 IsAnalog;
-
-	real32 StartX;
-	real32 StartY;
-
-	real32 MinX;
-	real32 MinY;
-
-	real32 MaxX;
-	real32 MaxY;
-
-	real32 EndX;
-	real32 EndY;
+	real32 StickAverageX;
+	real32 StickAverageY;
 
 	union
 	{
-		game_button_state Buttons[6];
+		game_button_state Buttons[10];
 		struct
 		{
-			game_button_state UP;
-			game_button_state DOWN;
-			game_button_state RIGHT;
-			game_button_state LEFT;
+			game_button_state MOVE_UP;
+			game_button_state MOVE_DOWN;
+			game_button_state MOVE_RIGHT;
+			game_button_state MOVE_LEFT;
+
+			game_button_state ACTION_UP;
+			game_button_state ACTION_DOWN;
+			game_button_state ACTION_RIGHT;
+			game_button_state ACTION_LEFT;
+
 			game_button_state LEFT_SHOULDER;
 			game_button_state RIGHT_SHOULDER;
+
+			game_button_state BACK;
+			game_button_state START;
 		};
 	};
 };
 
 struct game_input
 {
-	game_controller_input Controllers[4];
+	game_controller_input Controllers[5];
 };
+
+inline game_controller_input *GetController(game_input *Input, int unsigned ControllerIndex)
+{
+	Assert(ControllerIndex < ArrayCount(Input->Controllers));
+
+	game_controller_input *Result = &Input->Controllers[ControllerIndex];
+	return(Result);
+}
 
 struct game_memory
 {
 	bool32 IsInitialized;
 
 	uint64 PermanentStorageSize;
-	void* PermamentStrorage;
+	void* PermanentStorage;
 
 	uint64 TransientStorageSize;
-	void* TransientStrorage;
+	void* TransientStorage;
 };
 
 struct game_state
