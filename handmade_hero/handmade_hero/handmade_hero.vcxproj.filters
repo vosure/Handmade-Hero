@@ -15,25 +15,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="win32_handmade.cpp">
+    <ClInclude Include="src\handmade.cpp">
       <Filter>Resource Files</Filter>
-    </ClCompile>
+    </ClInclude>
+    <ClInclude Include="src\handmade.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\win32_handmade.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="handmade.h">
+    <ClCompile Include="src\win32_handmade.cpp">
       <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="linux_handmade.cpp">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="defines.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handmade.cpp">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="win32_handmade.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
+    </ClCompile>
   </ItemGroup>
 </Project>
