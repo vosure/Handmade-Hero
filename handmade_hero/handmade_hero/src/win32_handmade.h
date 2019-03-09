@@ -1,4 +1,7 @@
 #pragma once
+
+#pragma comment(lib, "winmm.lib")
+
 struct win32_offscreen_buffer
 {
 	BITMAPINFO Info;

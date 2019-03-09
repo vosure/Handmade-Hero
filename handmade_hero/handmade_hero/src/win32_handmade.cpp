@@ -32,6 +32,7 @@ typedef double real64;
 global_variable bool32 GlobalRunning;
 global_variable win32_offscreen_buffer GlobalBackBuffer;
 global_variable LPDIRECTSOUNDBUFFER GlobalSecondaryBuffer;
+global_variable int64 GlobalPerformanceCountFrequency;
 
 #include "handmade.cpp"
 
@@ -510,6 +511,20 @@ Win32MainWindowCallback(HWND   Window,
 	return(Result);
 }
 
+inline LARGE_INTEGER
+Win32GetWallClock()
+{
+	LARGE_INTEGER Result;
+	QueryPerformanceCounter(&Result);
+	return(Result);
+}
+
+inline real32
+Win32GetSecondsElapsed(LARGE_INTEGER Start, LARGE_INTEGER End)
+{
+	return (real32)((End.QuadPart - Start.QuadPart) / (real32)GlobalPerformanceCountFrequency);
+}
+
 int CALLBACK
 WinMain(HINSTANCE Instance,
 	HINSTANCE PrevInstance,
@@ -518,7 +533,10 @@ WinMain(HINSTANCE Instance,
 {
 	LARGE_INTEGER PerformanceCountFrequencyResult;
 	QueryPerformanceFrequency(&PerformanceCountFrequencyResult);
-	int64 PerformanceCountFrequency = PerformanceCountFrequencyResult.QuadPart;
+	GlobalPerformanceCountFrequency = PerformanceCountFrequencyResult.QuadPart;
+
+	UINT DesiredSchedulerMs = 1;
+	bool32 SleepIsGranular = (timeBeginPeriod(DesiredSchedulerMs) == TIMERR_NOERROR);
 
 	Win32LoadXInput();
 
@@ -533,6 +551,11 @@ WinMain(HINSTANCE Instance,
 	//	WindowClass.hIcon = ;
 	//	WindowClass.lpszMenuName = ;
 	WindowClass.lpszClassName = "HandmadeHeroWindowClass";
+
+	uint32 MonitorRefreshHz = 60;
+	uint32 GameUpdateHz = MonitorRefreshHz / 2;
+
+	real32 TargetSecondsPerFrame = 1.0f / (real32)GameUpdateHz;
 
 	if (RegisterClass(&WindowClass))
 	{
@@ -584,10 +607,9 @@ WinMain(HINSTANCE Instance,
 				game_input *NewInput = &Input[0];
 				game_input *OldInput = &Input[1];
 
-				LARGE_INTEGER LastCounter;
-				QueryPerformanceCounter(&LastCounter);
+				LARGE_INTEGER LastCounter = Win32GetWallClock();
 
-				int64 LastCycleCount = __rdtsc();
+				uint64 LastCycleCount = (uint64)__rdtsc();
 				while (GlobalRunning)
 				{
 
@@ -717,50 +739,74 @@ WinMain(HINSTANCE Instance,
 					{
 						Win32FillSoundBuffer(&SoundOutput, BytesToLock, BytesToWrite, &SoundBuffer);
 					}
+
+					ReleaseDC(Window, DeviceContext);
+										
+					LARGE_INTEGER WorkCounter = Win32GetWallClock();
+
+					real32 WorkSecondsElapsed = Win32GetSecondsElapsed(LastCounter, WorkCounter);
+
+					real32 SecondsElapsedforFrame = WorkSecondsElapsed;
+					if (SecondsElapsedforFrame < TargetSecondsPerFrame)
+					{
+						while (SecondsElapsedforFrame < TargetSecondsPerFrame)
+						{
+							if (SleepIsGranular)
+							{
+								DWORD SleepMs = (DWORD)(1000.0f * (TargetSecondsPerFrame - SecondsElapsedforFrame));
+								Sleep(SleepMs);
+							}
+							SecondsElapsedforFrame = Win32GetSecondsElapsed(LastCounter, Win32GetWallClock());
+						}
+					}
+					else
+					{
+
+					}
+
+
 					win32_window_dimension Dimension = Win32GetWindowDimension(Window);
 					Win32DisplayBufferInWindow(&GlobalBackBuffer, DeviceContext, Dimension.Width, Dimension.Height);
-					ReleaseDC(Window, DeviceContext);
-
-					int64 EndCycleCount = __rdtsc();
-
-					LARGE_INTEGER EndCounter;
-					QueryPerformanceCounter(&EndCounter);
-
-					int32 CyclesElapled = (int32)(EndCycleCount - LastCycleCount);
-					int64 CounterElapsed = (int32)(EndCounter.QuadPart - LastCounter.QuadPart);
-					int32 MSPerFrame = (int32)(((1000 * CounterElapsed) / PerformanceCountFrequency));
-					int32 FPS = (int32)(PerformanceCountFrequency / CounterElapsed);
-					int32 MCPF = (int32)(CyclesElapled / (1000 * 1000));
-
-					//char InformationString[256];
-					//wsprintf(InformationString, "%dms/f, %df/s, %dmc/f\n", MSPerFrame, FPS, MCPF);
-					//OutputDebugStringA(InformationString);
-
-					LastCounter = EndCounter;
-					LastCycleCount = EndCycleCount;
 
 					game_input *Temp = NewInput;
 					NewInput = OldInput;
 					OldInput = Temp;
 
+					LARGE_INTEGER EndCounter = Win32GetWallClock();
+					real32 MSPerFrame = 1000.0f * Win32GetSecondsElapsed(LastCounter, EndCounter);
+					LastCounter = EndCounter;
+
+					uint64 EndCycleCount = (uint64)__rdtsc();
+					uint64 CyclesElapled = EndCycleCount - LastCycleCount;
+					LastCycleCount = EndCycleCount;
+
+
+					
+					real64 FPS = 0;
+					real64 MCPF = (real64)(CyclesElapled / (1000.0f * 1000.0f));
+
+					char InformationString[256];
+					_snprintf_s(InformationString, sizeof(InformationString), "%.02fms/f, %.02ff/s, %.02fmc/f\n", MSPerFrame, FPS, MCPF);
+					OutputDebugStringA(InformationString);
+
+					}
 				}
-			}
 			else
 			{
 				// Logging
 			}
-		}
+			}
 		else
 		{
 			// Logging
 		}
 
-	}
+		}
 	else
 	{
 		// Logging
 	}
 
 	return(0);
-}
+	}
 
