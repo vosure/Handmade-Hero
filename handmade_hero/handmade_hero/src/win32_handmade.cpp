@@ -525,6 +525,38 @@ Win32GetSecondsElapsed(LARGE_INTEGER Start, LARGE_INTEGER End)
 	return (real32)((End.QuadPart - Start.QuadPart) / (real32)GlobalPerformanceCountFrequency);
 }
 
+internal void
+Win32DebugDrawVertical(win32_offscreen_buffer *GlobalBackBuffer,
+					   int32 X, int32 Top, int32 Bottom, uint32 Color)
+{
+	uint8 *Pixel = ((uint8 *)GlobalBackBuffer->Memory + X * GlobalBackBuffer->BytesPerPixel + Top * GlobalBackBuffer->Pitch);
+	for (int32 Y = Top; Y < Bottom; ++Y)
+	{
+		*(uint32 *)Pixel = Color;
+		Pixel += GlobalBackBuffer->Pitch;
+	}
+}
+
+internal void
+Win32DebugSyncDisplay(win32_offscreen_buffer *GlobalBackBuffer,
+	int32 LastPlayCursorCount, DWORD *LastPlayCursor,
+	win32_sound_output *SoundOutput, real32 TargetSecondsElapsed)
+{
+	int32 PadX = 16;
+	int32 PadY = 16;
+
+	int32 Top = PadY;
+	int32 Bottom = GlobalBackBuffer->Height - PadY;
+
+	real32 C = (real32)(GlobalBackBuffer->Width - 2 * PadX) / (real32) SoundOutput->SecondaryBufferSize;
+
+	for (int32 PlayCursorIndex = 0; PlayCursorIndex < LastPlayCursorCount; ++PlayCursorIndex)
+	{
+		int32 X = PadX + (int32)(C * (real32)LastPlayCursor[PlayCursorIndex]);
+		Win32DebugDrawVertical(GlobalBackBuffer, X, Top, Bottom, 0xFFFFFFFF);
+	}
+}
+
 int CALLBACK
 WinMain(HINSTANCE Instance,
 	HINSTANCE PrevInstance,
@@ -552,9 +584,8 @@ WinMain(HINSTANCE Instance,
 	//	WindowClass.lpszMenuName = ;
 	WindowClass.lpszClassName = "HandmadeHeroWindowClass";
 
-	uint32 MonitorRefreshHz = 60;
-	uint32 GameUpdateHz = MonitorRefreshHz / 2;
-
+#define MonitorRefreshHz  60
+#define GameUpdateHz (MonitorRefreshHz / 2)
 	real32 TargetSecondsPerFrame = 1.0f / (real32)GameUpdateHz;
 
 	if (RegisterClass(&WindowClass))
@@ -608,6 +639,9 @@ WinMain(HINSTANCE Instance,
 				game_input *OldInput = &Input[1];
 
 				LARGE_INTEGER LastCounter = Win32GetWallClock();
+
+				int32 DebugLastPlayCursorIndex = 0;
+				DWORD DebugLastPlayCursor[GameUpdateHz / 2] = {0};
 
 				uint64 LastCycleCount = (uint64)__rdtsc();
 				while (GlobalRunning)
@@ -741,7 +775,7 @@ WinMain(HINSTANCE Instance,
 					}
 
 					ReleaseDC(Window, DeviceContext);
-										
+
 					LARGE_INTEGER WorkCounter = Win32GetWallClock();
 
 					real32 WorkSecondsElapsed = Win32GetSecondsElapsed(LastCounter, WorkCounter);
@@ -765,8 +799,28 @@ WinMain(HINSTANCE Instance,
 					}
 
 
+
+
 					win32_window_dimension Dimension = Win32GetWindowDimension(Window);
+#if HANDMADE_INTERNAL
+					Win32DebugSyncDisplay(&GlobalBackBuffer, ArrayCount(DebugLastPlayCursor), DebugLastPlayCursor,
+						&SoundOutput, TargetSecondsPerFrame);
+#endif
 					Win32DisplayBufferInWindow(&GlobalBackBuffer, DeviceContext, Dimension.Width, Dimension.Height);
+
+#if HANDMADE_INTERNAL
+					{
+						DWORD PlayCursor;
+						DWORD WriteCursor;
+						GlobalSecondaryBuffer->GetCurrentPosition(&PlayCursor, &WriteCursor);
+
+						DebugLastPlayCursor[DebugLastPlayCursorIndex++] = PlayCursor;
+						if (DebugLastPlayCursorIndex > ArrayCount(DebugLastPlayCursor))
+						{
+							DebugLastPlayCursorIndex = 0;
+						}
+					}
+#endif
 
 					game_input *Temp = NewInput;
 					NewInput = OldInput;
@@ -781,7 +835,7 @@ WinMain(HINSTANCE Instance,
 					LastCycleCount = EndCycleCount;
 
 
-					
+
 					real64 FPS = 0;
 					real64 MCPF = (real64)(CyclesElapled / (1000.0f * 1000.0f));
 
@@ -789,24 +843,24 @@ WinMain(HINSTANCE Instance,
 					_snprintf_s(InformationString, sizeof(InformationString), "%.02fms/f, %.02ff/s, %.02fmc/f\n", MSPerFrame, FPS, MCPF);
 					OutputDebugStringA(InformationString);
 
-					}
 				}
+			}
 			else
 			{
 				// Logging
 			}
-			}
+		}
 		else
 		{
 			// Logging
 		}
 
-		}
+	}
 	else
 	{
 		// Logging
 	}
 
 	return(0);
-	}
+}
 
