@@ -25,7 +25,13 @@ struct win32_sound_output
 	int32 ToneVolume;
 	uint32 RunningSampleIndex;
 	int32 BytesPerSample;
-	int32 SecondaryBufferSize;
+	uint32 SecondaryBufferSize;
 	real32 tSine;
 	int32 LatencySampleCount;
+};
+
+struct win32_debug_time_marker
+{
+	DWORD PlayCursor;
+	DWORD WriteCursor;
 };
