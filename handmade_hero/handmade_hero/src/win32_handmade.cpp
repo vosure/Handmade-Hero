@@ -657,7 +657,11 @@ WinMain(HINSTANCE Instance,
 				win32_debug_time_marker DebugTimeMarkers[GameUpdateHz / 2] = { 0 };
 
 				DWORD LastPlayCursor = 0;
+				DWORD LastWriteCursor = 0;
 				bool32 SoundIsValid = false;
+
+				DWORD AudioLatencyBytes = 0;
+				real32 AudioLatencySeconds = 0;
 
 				uint64 LastCycleCount = (uint64)__rdtsc();
 				while (GlobalRunning)
@@ -751,8 +755,8 @@ WinMain(HINSTANCE Instance,
 						}
 					}
 
-					DWORD BytesToLock =0;
-					DWORD BytesToWrite =0;
+					DWORD BytesToLock = 0;
+					DWORD BytesToWrite = 0;
 					DWORD TargetCursor = 0;
 
 					if (SoundIsValid)
@@ -783,6 +787,26 @@ WinMain(HINSTANCE Instance,
 
 					if (SoundIsValid)
 					{
+#if HANDMADE_INTERNAL
+						DWORD PlayCursor;
+						DWORD WriteCursor;
+						GlobalSecondaryBuffer->GetCurrentPosition(&PlayCursor, &WriteCursor);
+
+						DWORD UnwrapedWriteCursor = WriteCursor;
+						if (UnwrapedWriteCursor < PlayCursor)
+						{
+							UnwrapedWriteCursor += SoundOutput.SecondaryBufferSize;
+						}
+						AudioLatencyBytes = UnwrapedWriteCursor - PlayCursor;
+						AudioLatencySeconds = (((real32)AudioLatencyBytes / (real32)SoundOutput.BytesPerSample) / (real32)SoundOutput.SamplesPerSecond);
+
+						char InformationString[256];
+						_snprintf_s(InformationString, sizeof(InformationString),
+							"LPC:%u BTL:%u TC:%u BTW:%u - PC:%u WC:%u DELTA:%u (%fs)\n",
+							LastPlayCursor, BytesToLock, TargetCursor, BytesToWrite,
+							PlayCursor, WriteCursor, AudioLatencyBytes, AudioLatencySeconds);
+						OutputDebugStringA(InformationString);
+#endif 
 						Win32FillSoundBuffer(&SoundOutput, BytesToLock, BytesToWrite, &SoundBuffer);
 					}
 
@@ -800,9 +824,22 @@ WinMain(HINSTANCE Instance,
 							if (SleepIsGranular)
 							{
 								DWORD SleepMs = (DWORD)(1000.0f * (TargetSecondsPerFrame - SecondsElapsedforFrame));
-								Sleep(SleepMs);
+								if (SleepMs > 0)
+								{
+									Sleep(SleepMs);
+								}
 							}
-							SecondsElapsedforFrame = Win32GetSecondsElapsed(LastCounter, Win32GetWallClock());
+							real32 TestSecondsElapsedForFrame = Win32GetSecondsElapsed(LastCounter, Win32GetWallClock());
+
+							if (TestSecondsElapsedForFrame < TargetSecondsPerFrame)
+							{
+								//Logging
+							}
+							while (SecondsElapsedforFrame < TargetSecondsPerFrame) 
+							{
+								SecondsElapsedforFrame = Win32GetSecondsElapsed(LastCounter, Win32GetWallClock());
+							}
+							
 						}
 					}
 					else
@@ -822,9 +859,10 @@ WinMain(HINSTANCE Instance,
 
 					DWORD PlayCursor;
 					DWORD WriteCursor;
-					if (GlobalSecondaryBuffer->GetCurrentPosition(&PlayCursor, &WriteCursor)==DS_OK)
+					if (GlobalSecondaryBuffer->GetCurrentPosition(&PlayCursor, &WriteCursor) == DS_OK)
 					{
 						LastPlayCursor = PlayCursor;
+						LastWriteCursor = WriteCursor;
 						if (!SoundIsValid)
 						{
 							SoundOutput.RunningSampleIndex = WriteCursor / SoundOutput.BytesPerSample;
@@ -838,8 +876,9 @@ WinMain(HINSTANCE Instance,
 
 #if HANDMADE_INTERNAL
 					{
+						Assert(DebugTimeMarkerIndex < ArrayCount(DebugTimeMarkers));
 						win32_debug_time_marker *Marker = &DebugTimeMarkers[DebugTimeMarkerIndex++];
-						if (DebugTimeMarkerIndex > ArrayCount(DebugTimeMarkers))
+						if (DebugTimeMarkerIndex >= ArrayCount(DebugTimeMarkers))
 						{
 							DebugTimeMarkerIndex = 0;
 						}
