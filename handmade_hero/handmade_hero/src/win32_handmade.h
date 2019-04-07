@@ -21,11 +21,10 @@ struct win32_window_dimension
 struct win32_sound_output
 {
 	int32 SamplesPerSecond;
-	int32 ToneHz;
-	int32 ToneVolume;
 	uint32 RunningSampleIndex;
 	int32 BytesPerSample;
 	uint32 SecondaryBufferSize;
+	DWORD SafetyBytes;
 	real32 tSine;
 	int32 LatencySampleCount;
 };

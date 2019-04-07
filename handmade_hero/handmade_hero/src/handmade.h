@@ -119,7 +119,8 @@ struct game_state
 	int32 ToneHz;
 };
 
-internal void GameUpdateAndRender(game_memory *Memory, game_offscreen_buffer *Buffer, game_sound_output_buffer *SoundBuffer, game_input *Input);
+internal void GameUpdateAndRender(game_memory *Memory, game_offscreen_buffer *Buffer, game_input *Input);
+internal void GameGetSoundSamples(game_memory *Memory, game_sound_output_buffer *SoundBuffer);
 
 #define HANDMADE_H
 #endif
