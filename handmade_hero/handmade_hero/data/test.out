@@ -28,14 +28,13 @@ RenderWierdGradient(game_offscreen_buffer *Buffer, int XOffset, int YOffset)
 		for (int X = 0; X < Buffer->Width; ++X)
 		{
 			uint8 Blue = (uint8)(X + XOffset);
-			uint8 Red = (uint8)(Y + YOffset);
+			uint8 Green = (uint8)(Y + YOffset);
 
-			*Pixel++ = (Red << 8 | Blue);
+			*Pixel++ = ((Green << 16) | Blue);
 		}
 		Row += Buffer->Pitch;
 	}
 }
-
 internal void
 GameUpdateAndRender(game_memory *Memory, game_offscreen_buffer *Buffer, game_input *Input)
 {

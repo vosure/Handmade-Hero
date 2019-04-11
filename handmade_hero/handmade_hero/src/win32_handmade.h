@@ -6,16 +6,16 @@ struct win32_offscreen_buffer
 {
 	BITMAPINFO Info;
 	void *Memory;
-	int Width;
-	int Height;
-	int Pitch;
-	int BytesPerPixel;
+	int32 Width;
+	int32 Height;
+	int32 Pitch;
+	int32 BytesPerPixel;
 };
 
 struct win32_window_dimension
 {
-	int Width;
-	int Height;
+	int32 Width;
+	int32 Height;
 };
 
 struct win32_sound_output
@@ -31,6 +31,13 @@ struct win32_sound_output
 
 struct win32_debug_time_marker
 {
-	DWORD PlayCursor;
-	DWORD WriteCursor;
+	DWORD OutputPlayCursor;
+	DWORD OutputWriteCursor;
+
+	DWORD OutputLocation;
+	DWORD OutputByteCount;
+
+	DWORD ExpectedFlipPlayCursor;
+	DWORD FlipPlayCursor;
+	DWORD FlipWriteCursor;
 };
