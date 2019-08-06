@@ -1,6 +1,6 @@
 #pragma once
 
-#pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "Winmm.lib")
 
 struct win32_offscreen_buffer
 {
@@ -40,4 +40,14 @@ struct win32_debug_time_marker
 	DWORD ExpectedFlipPlayCursor;
 	DWORD FlipPlayCursor;
 	DWORD FlipWriteCursor;
+};
+
+struct win32_game_code
+{
+	HMODULE GameCodeDLL;
+	FILETIME DLLLastWriteTime;
+	game_update_and_render *UpdateAndRender;
+	game_get_sound_samples *GetSoundSamples;
+
+	bool32 IsValid;
 };
