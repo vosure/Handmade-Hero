@@ -70,15 +70,16 @@ SafeTruncateUInt64(uint64 Value)
 struct game_offscreen_buffer
 {
 	void *Memory;
-	int Width;
-	int Height;
-	int Pitch;
+	int32 Width;
+	int32 Height;
+	int32 Pitch;
+	int32 BytesPerPixel;
 };
 
 struct game_sound_output_buffer
 {
-	int SamplesPerSecond;
-	int SampleCount;
+	int32 SamplesPerSecond;
+	int32 SampleCount;
 	int16 *Samples;
 };
 
@@ -159,6 +160,10 @@ struct game_state
 	int32 ToneHz;
 
 	real32 tSine;	
+
+	int32 PlayerX;
+	int32 PlayerY;
+	real32 tJump;
 };
 
 #define GAME_UPDATE_AND_RENDER(name) void name(game_memory *Memory, game_offscreen_buffer *Buffer, game_input *Input)
