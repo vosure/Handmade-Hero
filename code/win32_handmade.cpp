@@ -962,7 +962,6 @@ WinMain(HINSTANCE Instance,
 				game_input Input[2] = {};
 				game_input *NewInput = &Input[0];
 				game_input *OldInput = &Input[1];
-				NewInput->SecondsToAdvanceOverUpdate = TargetSecondsPerFrame;
 
 				LARGE_INTEGER LastCounter = Win32GetWallClock();
 				LARGE_INTEGER FlipWallClock = Win32GetWallClock();
@@ -980,6 +979,7 @@ WinMain(HINSTANCE Instance,
 				uint64 LastCycleCount = __rdtsc();
 				while (GlobalRunning)
 				{
+					NewInput->dtForFrame = TargetSecondsPerFrame;
 					FILETIME NewDLLWriteTime = Win32GetLastWriteTime(SourceGameCodeDLLFullPath);
 					if (CompareFileTime(&NewDLLWriteTime, &Game.DLLLastWriteTime) == 1 || CompareFileTime(&NewDLLWriteTime, &Game.DLLLastWriteTime) == -1)
 					//if(LoadCounter ++ >120)
