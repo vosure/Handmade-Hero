@@ -457,7 +457,11 @@ Win32GetInputFileLocation(win32_state *State, bool32 InputStream, int32 SlotInde
 }
 
 internal win32_replay_buffer *
+<<<<<<< HEAD
 Win32GetReplayBuffer(win32_state *State, uint32 Index)
+=======
+Win32GetReplayBuffer(win32_state *State, int unsigned Index)
+>>>>>>> 3af7a9f
 {
 	Assert(Index < ArrayCount(State->ReplayBuffers));
 	win32_replay_buffer *Result = &State->ReplayBuffers[Index];
@@ -509,7 +513,11 @@ Win32BeginPlayBackInput(win32_state *State, int InputPlayingIndex)
 		FilePosition.QuadPart = State->TotalSize;
 		SetFilePointerEx(State->PlayBackHandle, FilePosition, 0, FILE_BEGIN);
 #endif
+<<<<<<< HEAD
 		CopyMemory(ReplayBuffer->MemoryBlock, State->GameMemoryBlock, State->TotalSize);
+=======
+		CopyMemory(State->GameMemoryBlock, ReplayBuffer->MemoryBlock, State->TotalSize);
+>>>>>>> 3af7a9f
 	}
 }
 
@@ -864,7 +872,7 @@ WinMain(HINSTANCE Instance,
 	WNDCLASSA WindowClass = {};
 
 	//win32_window_dimension Dimension = Win32GetWindowDimension(Window);
-	Win32ResizeDIBSection(&GlobalBackBuffer, 1280, 720);
+	Win32ResizeDIBSection(&GlobalBackBuffer, 960, 540);
 
 	WindowClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
 	WindowClass.lpfnWndProc = Win32MainWindowCallback;
@@ -979,6 +987,7 @@ WinMain(HINSTANCE Instance,
 				uint64 LastCycleCount = __rdtsc();
 				while (GlobalRunning)
 				{
+					NewInput->dtForFrame = TargetSecondsPerFrame;
 					FILETIME NewDLLWriteTime = Win32GetLastWriteTime(SourceGameCodeDLLFullPath);
 					if (CompareFileTime(&NewDLLWriteTime, &Game.DLLLastWriteTime) == 1 || CompareFileTime(&NewDLLWriteTime, &Game.DLLLastWriteTime) == -1)
 					//if(LoadCounter ++ >120)
@@ -1248,10 +1257,7 @@ WinMain(HINSTANCE Instance,
 						LastCounter = EndCounter;
 
 						win32_window_dimension Dimension = Win32GetWindowDimension(Window);
-#if HANDMADE_INTERNAL
-						Win32DebugSyncDisplay(&GlobalBackBuffer, ArrayCount(DebugTimeMarkers), DebugTimeMarkers,
-											  DebugTimeMarkerIndex - 1, &SoundOutput);
-#endif
+
 						Win32DisplayBufferInWindow(&GlobalBackBuffer, DeviceContext, Dimension.Width, Dimension.Height);
 
 						FlipWallClock = Win32GetWallClock();
