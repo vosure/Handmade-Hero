@@ -352,8 +352,16 @@ internal void
 Win32DisplayBufferInWindow(win32_offscreen_buffer *Buffer, HDC DeviceContext,
 						   int WindowWidth, int WindowHeight)
 {
+	int32 OffsetY = 10;
+	int32 OffsetX = 10;
+
+	PatBlt(DeviceContext, 0, 0, WindowWidth, OffsetY, BLACKNESS);
+	PatBlt(DeviceContext, 0, OffsetY + Buffer->Height, WindowWidth, WindowHeight, BLACKNESS);
+	PatBlt(DeviceContext, 0, 0, OffsetX, WindowHeight, BLACKNESS);
+	PatBlt(DeviceContext, OffsetX + Buffer->Width, 0, WindowWidth, WindowHeight, BLACKNESS);
+
 	StretchDIBits(DeviceContext,
-				  0, 0, Buffer->Width, Buffer->Height,
+				  OffsetX, OffsetY, Buffer->Width, Buffer->Height,
 				  0, 0, Buffer->Width, Buffer->Height,
 				  Buffer->Memory,
 				  &Buffer->Info,
@@ -457,11 +465,7 @@ Win32GetInputFileLocation(win32_state *State, bool32 InputStream, int32 SlotInde
 }
 
 internal win32_replay_buffer *
-<<<<<<< HEAD
-Win32GetReplayBuffer(win32_state *State, uint32 Index)
-=======
 Win32GetReplayBuffer(win32_state *State, int unsigned Index)
->>>>>>> 3af7a9f
 {
 	Assert(Index < ArrayCount(State->ReplayBuffers));
 	win32_replay_buffer *Result = &State->ReplayBuffers[Index];
@@ -513,11 +517,7 @@ Win32BeginPlayBackInput(win32_state *State, int InputPlayingIndex)
 		FilePosition.QuadPart = State->TotalSize;
 		SetFilePointerEx(State->PlayBackHandle, FilePosition, 0, FILE_BEGIN);
 #endif
-<<<<<<< HEAD
-		CopyMemory(ReplayBuffer->MemoryBlock, State->GameMemoryBlock, State->TotalSize);
-=======
 		CopyMemory(State->GameMemoryBlock, ReplayBuffer->MemoryBlock, State->TotalSize);
->>>>>>> 3af7a9f
 	}
 }
 
@@ -950,10 +950,10 @@ WinMain(HINSTANCE Instance,
 				ReplayBuffer->FileHandle = CreateFileA(ReplayBuffer->FileName, GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
 
 				LARGE_INTEGER MaxSize;
-                MaxSize.QuadPart = Win32State.TotalSize;
-                ReplayBuffer->MemoryMap = CreateFileMapping(
-                    ReplayBuffer->FileHandle, 0, PAGE_READWRITE,
-                    MaxSize.HighPart, MaxSize.LowPart, 0);
+				MaxSize.QuadPart = Win32State.TotalSize;
+				ReplayBuffer->MemoryMap = CreateFileMapping(
+					ReplayBuffer->FileHandle, 0, PAGE_READWRITE,
+					MaxSize.HighPart, MaxSize.LowPart, 0);
 				ReplayBuffer->MemoryBlock = MapViewOfFile(ReplayBuffer->MemoryMap, FILE_MAP_ALL_ACCESS, 0, 0, Win32State.TotalSize);
 
 				if (ReplayBuffer->MemoryBlock)
