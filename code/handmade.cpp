@@ -1,4 +1,5 @@
 #include "handmade.h"
+#include "handmade_intrinsics.h"
 
 internal void
 GameOutputSound(game_state *GameState, game_sound_output_buffer *SoundBuffer, int ToneHz)
@@ -25,36 +26,6 @@ GameOutputSound(game_state *GameState, game_sound_output_buffer *SoundBuffer, in
         }
 #endif
     }
-}
-
-inline int32
-RoundReal32ToInt32(real32 Real32)
-{
-    int32 Result = (int32)(Real32 + 0.5f);
-    return (Result);
-}
-
-inline uint32
-RoundReal32ToUInt32(real32 Real32)
-{
-    uint32 Result = (uint32)(Real32 + 0.5f);
-    return (Result);
-}
-
-#include "math.h"
-
-inline int32
-FloorReal32ToInt32(real32 Real32)
-{
-    int32 Result = (int32)floorf(Real32);
-    return (Result);
-}
-
-inline int32
-TruncateReal32ToInt32(real32 Real32)
-{
-    int32 Result = (int32)(Real32);
-    return (Result);
 }
 
 internal void
@@ -148,16 +119,16 @@ GetCanonicalPosition(world *World, raw_position Position)
 
     real32 X = Position.X - World->UpperLeftX;
     real32 Y = Position.Y - World->UpperLeftY;
-    Result.TileX = FloorReal32ToInt32((X) / World->TileWidth);
-    Result.TileY = FloorReal32ToInt32((Y) / World->TileHeight);
+    Result.TileX = FloorReal32ToInt32((X) / World->TileSideInPixels);
+    Result.TileY = FloorReal32ToInt32((Y) / World->TileSideInPixels);
 
-    Result.X = X - Result.TileX * World->TileWidth;
-    Result.Y = Y - Result.TileY * World->TileHeight;
+    Result.TileRelativeX = X - Result.TileX * World->TileSideInPixels;
+    Result.TileRelativeY = Y - Result.TileY * World->TileSideInPixels;
 
-    Assert(Result.X >= 0);
-    Assert(Result.Y >= 0);
-    Assert(Result.X < World->TileWidth);
-    Assert(Result.Y < World->TileHeight);
+    Assert(Result.TileRelativeX >= 0);
+    Assert(Result.TileRelativeY >= 0);
+    Assert(Result.TileRelativeX < World->TileSideInPixels);
+    Assert(Result.TileRelativeY < World->TileSideInPixels);
 
     if (Result.TileX < 0)
     {
@@ -261,14 +232,14 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
     World.TileMapCountY = 2;
     World.CountX = TILE_MAP_COUNT_X;
     World.CountY = TILE_MAP_COUNT_Y;
-    World.UpperLeftX = -30;
+    World.TileSideInMeters = 1.4f;
+    World.TileSideInPixels = 60;
+    World.UpperLeftX = -(real32)World.TileSideInPixels / 2;
     World.UpperLeftY = 0;
-    World.TileWidth = 60;
-    World.TileHeight = 60;
     World.TileMaps = (tile_map *)TileMaps;
 
-    real32 PlayerWidth = 0.75f * World.TileWidth;
-    real32 PlayerHeight = 0.75f * World.TileHeight;
+    real32 PlayerWidth = 0.75f * World.TileSideInPixels;
+    real32 PlayerHeight = (real32)World.TileSideInPixels;
 
     game_state *GameState = (game_state *)Memory->PermanentStorage;
     if (!Memory->IsInitialized)
@@ -333,8 +304,8 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 
                 GameState->PlayerTileMapX = CanonicalPosition.TileMapX;
                 GameState->PlayerTileMapY = CanonicalPosition.TileMapY;
-                GameState->PlayerX = World.UpperLeftX + World.TileWidth * CanonicalPosition.TileX + CanonicalPosition.X;
-                GameState->PlayerY = World.UpperLeftY + World.TileHeight * CanonicalPosition.TileY + CanonicalPosition.Y;
+                GameState->PlayerX = World.UpperLeftX + World.TileSideInPixels * CanonicalPosition.TileX + CanonicalPosition.TileRelativeX;
+                GameState->PlayerY = World.UpperLeftY + World.TileSideInPixels * CanonicalPosition.TileY + CanonicalPosition.TileRelativeY;
             }
         }
     }
@@ -351,10 +322,10 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                 Gray = 1.0f;
             }
 
-            real32 MinX = World.UpperLeftX + ((real32)Column) * World.TileWidth;
-            real32 MinY = World.UpperLeftY + ((real32)Row) * World.TileHeight;
-            real32 MaxX = MinX + World.TileWidth;
-            real32 MaxY = MinY + World.TileHeight;
+            real32 MinX = World.UpperLeftX + ((real32)Column) * World.TileSideInPixels;
+            real32 MinY = World.UpperLeftY + ((real32)Row) * World.TileSideInPixels;
+            real32 MaxX = MinX + World.TileSideInPixels;
+            real32 MaxY = MinY + World.TileSideInPixels;
             DrawRectangle(Buffer, MinX, MinY, MaxX, MaxY, Gray, Gray, Gray);
         }
     }
