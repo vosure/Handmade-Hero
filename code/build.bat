@@ -15,6 +15,7 @@ REM cl %CommonCompilerFlags% ..\handmade_hero\code\win32_handmade.cpp /link -sub
 
 REM 64-bit build
 del *.pdb >NUL 2> NUL
+REM Optimiztion switches /02 /0i /fp:fast
 cl %CommonCompilerFlags% ..\code\handmade.cpp -Fmhandmade.map /LD /link -incremental:no -PDB:handmade_%random%.pdb /EXPORT:GameGetSoundSamples /EXPORT:GameUpdateAndRender
 cl %CommonCompilerFlags% ..\code\win32_handmade.cpp -Fmwin32_handmade.map /link %CommonLinkerFlags%
 popd

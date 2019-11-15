@@ -42,23 +42,18 @@ inline game_controller_input *GetController(game_input *Input, int unsigned Cont
 
 struct canonical_position
 {
+#if 1
     int32 TileMapX;
     int32 TileMapY;
 
     int32 TileX;
     int32 TileY;
-
+#else
+    uint32 Tilex;
+    uint32 TileY;
+#endif
     real32 TileRelativeX;
     real32 TileRelativeY;
-};
-
-struct raw_position
-{
-    int32 TileMapX;
-    int32 TileMapY;
-
-    real32 X;
-    real32 Y;
 };
 
 struct tile_map
@@ -70,6 +65,7 @@ struct world
 {
     real32 TileSideInMeters;
     int32 TileSideInPixels;
+    real32 MetersToPixels;
 
     int32 CountX;
     int32 CountY;
@@ -85,9 +81,5 @@ struct world
 
 struct game_state
 {
-    int32 PlayerTileMapX;
-    int32 PlayerTileMapY;
-
-    real32 PlayerX;
-    real32 PlayerY;
+    canonical_position PlayerPosition;
 };
