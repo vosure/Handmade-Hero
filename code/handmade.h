@@ -1,6 +1,7 @@
 #pragma once
 
 #include "handmade_platform.h"
+#include "handmade_tile.h"
 
 #define internal static
 #define local_persist static
@@ -40,46 +41,15 @@ inline game_controller_input *GetController(game_input *Input, int unsigned Cont
     return (Result);
 }
 
-struct tile_chunk_position
-{
-    uint32 TileChunkX;
-    uint32 TileChunkY;
-
-    uint32 RelativeTileX;
-    uint32 RelativeTileY;
-};
-
-struct world_position
-{
-    uint32 AbsoluteTileX;
-    uint32 AbsoluteTileY;
-
-    real32 TileRelativeX;
-    real32 TileRelativeY;
-};
-
-struct tile_chunk
-{
-    uint32 *Tiles;
-};
+#include "handmade_intrinsics.h"
+#include "handmade_tile.h"
 
 struct world
 {
-    uint32 ChunkShift;
-    uint32 ChunkMask;
-    uint32 ChunkDim;
-
-    real32 TileSideInMeters;
-    int32 TileSideInPixels;
-    real32 MetersToPixels;
-
-    int32 TileChunkCountX;
-    int32 TileChunkCountY;
-
-    tile_chunk *TileChunks;
+    tile_map *TileMap;
 };
 
 struct game_state
 {
-    world_position PlayerPosition;
+    tile_map_position PlayerPosition;
 };
