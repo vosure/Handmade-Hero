@@ -21,7 +21,7 @@ RecanonicalizePosition(tile_map *TileMap, tile_map_position Position)
 }
 
 inline tile_chunk *
-GetTileChunk(tile_map *TileMap, int32 TileChunkX, int32 TileChunkY)
+GetTileChunk(tile_map *TileMap, uint32 TileChunkX, uint32 TileChunkY)
 {
     tile_chunk *TileChunk = 0;
 
@@ -39,11 +39,23 @@ GetTileValueUnchecked(tile_map *TileMap, tile_chunk *TileChunk, uint32 TileX, ui
     Assert(TileChunk);
     Assert(TileX < TileMap->ChunkDim);
     Assert(TileY < TileMap->ChunkDim);
+
     uint32 TileChunkValue = TileChunk->Tiles[TileY * TileMap->ChunkDim + TileX];
+
     return (TileChunkValue);
 }
 
-internal bool32
+inline void
+SetTileValueUnchecked(tile_map *TileMap, tile_chunk *TileChunk, uint32 TileX, uint32 TileY, uint32 TileValue)
+{
+    Assert(TileChunk);
+    Assert(TileX < TileMap->ChunkDim);
+    Assert(TileY < TileMap->ChunkDim);
+    
+    TileChunk->Tiles[TileY * TileMap->ChunkDim + TileX] = TileValue;
+}
+
+internal uint32
 GetTileValue(tile_map *TileMap, tile_chunk *TileChunk, uint32 TestTileX, uint32 TestTileY)
 {
     uint32 TileChunkValue = 0;
@@ -54,6 +66,17 @@ GetTileValue(tile_map *TileMap, tile_chunk *TileChunk, uint32 TestTileX, uint32 
     }
 
     return (TileChunkValue);
+}
+
+internal void
+SetTileValue(tile_map *TileMap, tile_chunk *TileChunk, uint32 TestTileX, uint32 TestTileY, uint32 TileValue)
+{
+    uint32 TileChunkValue = 0;
+
+    if (TileChunk)
+    {
+        SetTileValueUnchecked(TileMap, TileChunk, TestTileX, TestTileY, TileValue);
+    }
 }
 
 inline tile_chunk_position
@@ -88,4 +111,16 @@ IsTileMapPointEmpty(tile_map *TileMap, tile_map_position CanonicalPosition)
     bool32 Empty = (TileChunkValue == 0);
 
     return (Empty);
+}
+
+internal void 
+SetTileValue(memory_arena *Arena, tile_map *TileMap, uint32 AbsoluteTileX, uint32 AbsoluteTileY, uint32 TileValue)
+{
+    tile_chunk_position ChunkPosition = GetChunkPositionFor(TileMap, AbsoluteTileX, AbsoluteTileY);
+    tile_chunk *TileChunk = GetTileChunk(TileMap, ChunkPosition.TileChunkX, ChunkPosition.TileChunkY);
+
+    Assert(TileChunk);
+
+    SetTileValue(TileMap, TileChunk, ChunkPosition.RelativeTileX, ChunkPosition.RelativeTileY, TileValue);
+
 }
