@@ -6,8 +6,8 @@ struct tile_map_position
     uint32 AbsoluteTileY;
     uint32 AbsoluteTileZ;
 
-    real32 TileRelativeX;
-    real32 TileRelativeY;
+    real32 OffsetX;
+    real32 OffsetY;
 };
 
 struct tile_chunk_position

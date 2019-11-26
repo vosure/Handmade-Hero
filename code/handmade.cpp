@@ -71,6 +71,37 @@ DrawRectangle(game_offscreen_buffer *Buffer,
     }
 }
 
+#pragma pack(push, 1)
+struct bitmap_header
+{
+    uint16 FileType;
+    uint32 FileSize;
+    uint16 Reserved1;
+    uint16 Reserved2;
+    uint32 BitmapOffset;
+    uint32 Size;
+    int32 Width;
+    int32 Height;
+    uint16 Planes;
+    uint16 BitsPerPixel;
+};
+#pragma pack(pop)
+
+internal uint32 *
+DEBUGLoadBMP(thread_context *Thread, debug_platform_read_entire_file *ReadEntirefile, char *FileName)
+{   
+    uint32 *Result = 0;
+    debug_read_file_result ReadResult = ReadEntirefile(Thread, FileName);
+    if (ReadResult.ContentSize !=0)
+    {
+        bitmap_header *Header = (bitmap_header *)ReadResult.Contents;
+        uint32 *Pixels = (uint32 *)((uint8 *) ReadResult.Contents + Header->BitmapOffset);
+        Result = Pixels;
+    }
+
+    return (Result);
+}
+
 extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 {
     Assert((&Input->Controllers[0].Terminator - &Input->Controllers[0].Buttons[0]) ==
@@ -83,10 +114,12 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
     game_state *GameState = (game_state *)Memory->PermanentStorage;
     if (!Memory->IsInitialized)
     {
+        GameState->PixelPointer = DEBUGLoadBMP(Thread, Memory->DEBUGPlatformReadEntireFile, "test/test_background.bmp");
+
         GameState->PlayerPosition.AbsoluteTileX = 1;
         GameState->PlayerPosition.AbsoluteTileY = 3;
-        GameState->PlayerPosition.TileRelativeX = 5.0f;
-        GameState->PlayerPosition.TileRelativeY = 5.0f;
+        GameState->PlayerPosition.OffsetX = 5.0f;
+        GameState->PlayerPosition.OffsetY = 5.0f;
 
         InitializeArena(&GameState->WorldArena, Memory->PermanentStorageSize - sizeof(game_state), (uint8 *)Memory->PermanentStorage + sizeof(game_state));
 
@@ -138,9 +171,11 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             {
                 RandomChoice = RandomNumberTable[RandomNumberIndex++] % 3;
             }
-
+            
+            bool32 CreatedZDoor = false;
             if (RandomChoice == 2)
             {
+                CreatedZDoor = true;
                 if (AbsoluteTileZ == 0)
                 {
                     DoorUp = true;
@@ -204,15 +239,10 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             DoorLeft = DoorRight;
             DoorBottom = DoorTop;
 
-            if (DoorUp)
+            if (CreatedZDoor)
             {
-                DoorDown = true;
-                DoorUp = false;
-            }
-            else if (DoorDown)
-            {
-                DoorUp = true;
-                DoorDown = false;
+                DoorDown = !DoorDown;
+                DoorUp = !DoorUp;
             }
             else
             {
@@ -293,22 +323,36 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             dPlayerY *= PlayerSpeed;
 
             tile_map_position NewPlayerPosition = GameState->PlayerPosition;
-            NewPlayerPosition.TileRelativeX += Input->dtForFrame * dPlayerX;
-            NewPlayerPosition.TileRelativeY += Input->dtForFrame * dPlayerY;
+            NewPlayerPosition.OffsetX += Input->dtForFrame * dPlayerX;
+            NewPlayerPosition.OffsetY += Input->dtForFrame * dPlayerY;
             NewPlayerPosition = RecanonicalizePosition(TileMap, NewPlayerPosition);
 
             tile_map_position PlayerLeft = NewPlayerPosition;
-            PlayerLeft.TileRelativeX -= 0.5f * PlayerWidth;
+            PlayerLeft.OffsetX -= 0.5f * PlayerWidth;
             PlayerLeft = RecanonicalizePosition(TileMap, PlayerLeft);
 
             tile_map_position PlayerRight = NewPlayerPosition;
-            PlayerRight.TileRelativeX += 0.5f * PlayerWidth;
+            PlayerRight.OffsetX += 0.5f * PlayerWidth;
             PlayerRight = RecanonicalizePosition(TileMap, PlayerRight);
 
             if (IsTileMapPointEmpty(TileMap, NewPlayerPosition) &&
                 IsTileMapPointEmpty(TileMap, PlayerLeft) &&
                 IsTileMapPointEmpty(TileMap, PlayerRight))
             {
+                if (!AreOnSameTile(&GameState->PlayerPosition, &NewPlayerPosition))
+                {
+                    uint32 NewTileValue = GetTileValue(TileMap, NewPlayerPosition);
+
+                    if (NewTileValue == 3)
+                    {
+                        ++NewPlayerPosition.AbsoluteTileZ;
+                    }
+                    else if (NewTileValue == 4)
+                    {
+                        --NewPlayerPosition.AbsoluteTileZ;
+                    }
+                }
+
                 GameState->PlayerPosition = NewPlayerPosition;
             }
         }
@@ -343,8 +387,8 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                     Gray = 0.0f;
                 }
 
-                real32 CenterX = ScreenCenterX - MetersToPixels * GameState->PlayerPosition.TileRelativeX + ((real32)RelativeColumn) * TileSideInPixels;
-                real32 CenterY = ScreenCenterY + MetersToPixels * GameState->PlayerPosition.TileRelativeY - ((real32)RelativeRow) * TileSideInPixels;
+                real32 CenterX = ScreenCenterX - MetersToPixels * GameState->PlayerPosition.OffsetX + ((real32)RelativeColumn) * TileSideInPixels;
+                real32 CenterY = ScreenCenterY + MetersToPixels * GameState->PlayerPosition.OffsetY - ((real32)RelativeRow) * TileSideInPixels;
                 real32 MinX = CenterX - 0.5f * TileSideInPixels;
                 real32 MinY = CenterY - 0.5f * TileSideInPixels;
                 real32 MaxX = CenterX + 0.5f * TileSideInPixels;
@@ -364,6 +408,16 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                   PlayerLeft + PlayerWidth * MetersToPixels,
                   PlayerTop + PlayerHeight * MetersToPixels,
                   PlayerR, PlayerG, PlayerB);
+
+    uint32 *Source = GameState->PixelPointer;
+    uint32 *Dest = (uint32 *)Buffer->Memory;
+    for (int32 Y = 0; Y < Buffer->Height; ++Y)
+    {
+        for (int32 X = 0; X < Buffer->Width; ++X)
+        {
+            *Dest++ = *Source++;
+        }
+    }
 
     //DrawRectangle(Buffer, 10.0f, 10.0f, 40.0f, 40.0f, 0.0f, 1.0f, 1.0f);
 }
