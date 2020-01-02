@@ -198,21 +198,24 @@ Win32GetLastWriteTime(char *FileName)
 }
 
 internal win32_game_code
-Win32LoadGameCode(char *SourceDLLName, char *TempDLLName)
+Win32LoadGameCode(char *SourceDLLName, char *TempDLLName, char *LockFileName)
 {
 	win32_game_code Result = {};
 
-	Result.DLLLastWriteTime = Win32GetLastWriteTime(SourceDLLName);
-
-	CopyFile(SourceDLLName, TempDLLName, FALSE);
-	Result.GameCodeDLL = LoadLibraryA(TempDLLName);
-	if (Result.GameCodeDLL)
+	WIN32_FILE_ATTRIBUTE_DATA Ignored;
+	if (!GetFileAttributesEx(LockFileName, GetFileExInfoStandard, &Ignored))
 	{
-		Result.UpdateAndRender = (game_update_and_render *)GetProcAddress(Result.GameCodeDLL, "GameUpdateAndRender");
-		Result.GetSoundSamples = (game_get_sound_samples *)GetProcAddress(Result.GameCodeDLL, "GameGetSoundSamples");
-		Result.IsValid = Result.UpdateAndRender && Result.GetSoundSamples;
-	}
+		Result.DLLLastWriteTime = Win32GetLastWriteTime(SourceDLLName);
 
+		CopyFile(SourceDLLName, TempDLLName, FALSE);
+		Result.GameCodeDLL = LoadLibraryA(TempDLLName);
+		if (Result.GameCodeDLL)
+		{
+			Result.UpdateAndRender = (game_update_and_render *)GetProcAddress(Result.GameCodeDLL, "GameUpdateAndRender");
+			Result.GetSoundSamples = (game_get_sound_samples *)GetProcAddress(Result.GameCodeDLL, "GameGetSoundSamples");
+			Result.IsValid = Result.UpdateAndRender && Result.GetSoundSamples;
+		}
+	}
 	if (!Result.IsValid)
 	{
 		Result.UpdateAndRender = 0;
@@ -864,6 +867,10 @@ WinMain(HINSTANCE Instance,
 	Win32BuildEXEPathFileName(&Win32State, "handmade_temp.dll",
 							  sizeof(TempGameCodeDLLFullPath), TempGameCodeDLLFullPath);
 
+	char GameCodeLockFullPath[WIN32_STATE_FILE_NAME_COUNT];
+	Win32BuildEXEPathFileName(&Win32State, "lock.tmp",
+							  sizeof(GameCodeLockFullPath), GameCodeLockFullPath);
+
 	UINT DesiredSchedulerMs = 1;
 	bool32 SleepIsGranular = (timeBeginPeriod(DesiredSchedulerMs) == TIMERR_NOERROR);
 
@@ -981,7 +988,7 @@ WinMain(HINSTANCE Instance,
 				real32 AudioLatencySeconds = 0;
 				bool32 SoundIsValid = false;
 
-				win32_game_code Game = Win32LoadGameCode(SourceGameCodeDLLFullPath, TempGameCodeDLLFullPath);
+				win32_game_code Game = Win32LoadGameCode(SourceGameCodeDLLFullPath, TempGameCodeDLLFullPath, GameCodeLockFullPath);
 				uint32 LoadCounter = 0;
 
 				uint64 LastCycleCount = __rdtsc();
@@ -994,7 +1001,7 @@ WinMain(HINSTANCE Instance,
 					{
 						Sleep(155);
 						Win32UnloadGameCode(&Game);
-						Game = Win32LoadGameCode(SourceGameCodeDLLFullPath, TempGameCodeDLLFullPath);
+						Game = Win32LoadGameCode(SourceGameCodeDLLFullPath, TempGameCodeDLLFullPath, GameCodeLockFullPath);
 						LoadCounter = 0;
 					}
 
