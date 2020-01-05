@@ -30,14 +30,12 @@ GameOutputSound(game_state *GameState, game_sound_output_buffer *SoundBuffer, in
 }
 
 internal void
-DrawRectangle(game_offscreen_buffer *Buffer,
-              real32 RealMinX, real32 RealMinY, real32 RealMaxX, real32 RealMaxY,
-              real32 R, real32 G, real32 B)
+DrawRectangle(game_offscreen_buffer *Buffer, v2 vMin, v2 vMax, real32 R, real32 G, real32 B)
 {
-    int32 MinX = RoundReal32ToInt32(RealMinX);
-    int32 MinY = RoundReal32ToInt32(RealMinY);
-    int32 MaxX = RoundReal32ToInt32(RealMaxX);
-    int32 MaxY = RoundReal32ToInt32(RealMaxY);
+    int32 MinX = RoundReal32ToInt32(vMin.X);
+    int32 MinY = RoundReal32ToInt32(vMin.Y);
+    int32 MaxX = RoundReal32ToInt32(vMax.X);
+    int32 MaxY = RoundReal32ToInt32(vMax.Y);
 
     if (MinX < 0)
     {
@@ -262,8 +260,8 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 
         GameState->PlayerPosition.AbsoluteTileX = 1;
         GameState->PlayerPosition.AbsoluteTileY = 3;
-        GameState->PlayerPosition.OffsetX = 5.0f;
-        GameState->PlayerPosition.OffsetY = 5.0f;
+        GameState->PlayerPosition.Offset.X = 5.0f;
+        GameState->PlayerPosition.Offset.Y = 5.0f;
 
         InitializeArena(&GameState->WorldArena, Memory->PermanentStorageSize - sizeof(game_state), (uint8 *)Memory->PermanentStorage + sizeof(game_state));
 
@@ -438,28 +436,27 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
         }
         else
         {
-            real32 dPlayerX = 0.0f;
-            real32 dPlayerY = 0.0f;
+            v2 dPlayer = {};
 
             if (Controller->MOVE_UP.EndedDown)
             {
                 GameState->HeroFacingDirection = 1;
-                dPlayerY = 1.0f;
+                dPlayer.Y = 1.0f;
             }
             if (Controller->MOVE_DOWN.EndedDown)
             {
                 GameState->HeroFacingDirection = 3;
-                dPlayerY = -1.0f;
+                dPlayer.Y = -1.0f;
             }
             if (Controller->MOVE_LEFT.EndedDown)
             {
                 GameState->HeroFacingDirection = 2;
-                dPlayerX = -1.0f;
+                dPlayer.X = -1.0f;
             }
             if (Controller->MOVE_RIGHT.EndedDown)
             {
                 GameState->HeroFacingDirection = 0;
-                dPlayerX = 1.0f;
+                dPlayer.X = 1.0f;
             }
             real32 PlayerSpeed = 5.0f;
             if (Controller->ACTION_UP.EndedDown)
@@ -467,20 +464,23 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                 PlayerSpeed = 15.0f;
             }
 
-            dPlayerX *= PlayerSpeed;
-            dPlayerY *= PlayerSpeed;
+            dPlayer *= PlayerSpeed;
+
+            if ((dPlayer.X != 0.0f) && (dPlayer.Y != 0.0f))
+            {
+                dPlayer *= 0.70710678118f;
+            }
 
             tile_map_position NewPlayerPosition = GameState->PlayerPosition;
-            NewPlayerPosition.OffsetX += Input->dtForFrame * dPlayerX;
-            NewPlayerPosition.OffsetY += Input->dtForFrame * dPlayerY;
+            NewPlayerPosition.Offset += Input->dtForFrame * dPlayer;
             NewPlayerPosition = RecanonicalizePosition(TileMap, NewPlayerPosition);
 
             tile_map_position PlayerLeft = NewPlayerPosition;
-            PlayerLeft.OffsetX -= 0.5f * PlayerWidth;
+            PlayerLeft.Offset.X -= 0.5f * PlayerWidth;
             PlayerLeft = RecanonicalizePosition(TileMap, PlayerLeft);
 
             tile_map_position PlayerRight = NewPlayerPosition;
-            PlayerRight.OffsetX += 0.5f * PlayerWidth;
+            PlayerRight.Offset.X += 0.5f * PlayerWidth;
             PlayerRight = RecanonicalizePosition(TileMap, PlayerRight);
 
             if (IsTileMapPointEmpty(TileMap, NewPlayerPosition) &&
@@ -507,19 +507,19 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             GameState->CameraPosition.AbsoluteTileZ = GameState->PlayerPosition.AbsoluteTileZ;
 
             tile_map_difference Diff = Subtract(TileMap, &GameState->PlayerPosition, &GameState->CameraPosition);
-            if (Diff.dX > (9.0f * TileMap->TileSideInMeters))
+            if (Diff.dXY.X > (9.0f * TileMap->TileSideInMeters))
             {
                 GameState->CameraPosition.AbsoluteTileX += 17;
             }
-            if (Diff.dX < -(9.0f * TileMap->TileSideInMeters))
+            if (Diff.dXY.X < -(9.0f * TileMap->TileSideInMeters))
             {
                 GameState->CameraPosition.AbsoluteTileX -= 17;
             }
-            if (Diff.dY > (5.0f * TileMap->TileSideInMeters))
+            if (Diff.dXY.Y > (5.0f * TileMap->TileSideInMeters))
             {
                 GameState->CameraPosition.AbsoluteTileY += 9;
             }
-            if (Diff.dY < -(5.0f * TileMap->TileSideInMeters))
+            if (Diff.dXY.Y < -(5.0f * TileMap->TileSideInMeters))
             {
                 GameState->CameraPosition.AbsoluteTileY -= 9;
             }
@@ -556,13 +556,12 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                     Gray = 0.0f;
                 }
 
-                real32 CenterX = ScreenCenterX - MetersToPixels * GameState->CameraPosition.OffsetX + ((real32)RelativeColumn) * TileSideInPixels;
-                real32 CenterY = ScreenCenterY + MetersToPixels * GameState->CameraPosition.OffsetY - ((real32)RelativeRow) * TileSideInPixels;
-                real32 MinX = CenterX - 0.5f * TileSideInPixels;
-                real32 MinY = CenterY - 0.5f * TileSideInPixels;
-                real32 MaxX = CenterX + 0.5f * TileSideInPixels;
-                real32 MaxY = CenterY + 0.5f * TileSideInPixels;
-                DrawRectangle(Buffer, MinX, MinY, MaxX, MaxY, Gray, Gray, Gray);
+                v2 TileSide = {0.5f * TileSideInPixels, 0.5f * TileSideInPixels};
+                v2 Center = {ScreenCenterX - MetersToPixels * GameState->CameraPosition.Offset.X + ((real32)RelativeColumn) * TileSideInPixels, 
+                             ScreenCenterY + MetersToPixels * GameState->CameraPosition.Offset.Y - ((real32)RelativeRow) * TileSideInPixels};
+                v2 Min = Center - TileSide;
+                v2 Max = Center + TileSide;
+                DrawRectangle(Buffer, Min, Max, Gray, Gray, Gray);
             }
         }
     }
@@ -573,13 +572,14 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
     real32 PlayerG = 1.0f;
     real32 PlayerB = 0.0f;
 
-    real32 PlayerGroundPointX = ScreenCenterX + MetersToPixels * Diff.dX;
-    real32 PlayerGroundPointY = ScreenCenterY - MetersToPixels * Diff.dY;
-    real32 PlayerLeft = PlayerGroundPointX - 0.5f * PlayerWidth * MetersToPixels;
-    real32 PlayerTop = PlayerGroundPointY - PlayerHeight * MetersToPixels;
-    DrawRectangle(Buffer, PlayerLeft, PlayerTop,
-                  PlayerLeft + PlayerWidth * MetersToPixels,
-                  PlayerTop + PlayerHeight * MetersToPixels,
+    real32 PlayerGroundPointX = ScreenCenterX + MetersToPixels * Diff.dXY.X;
+    real32 PlayerGroundPointY = ScreenCenterY - MetersToPixels * Diff.dXY.Y;
+    v2 PlayerLeftTop = {PlayerGroundPointX - 0.5f * PlayerWidth * MetersToPixels, 
+                        PlayerGroundPointY - PlayerHeight * MetersToPixels};
+    v2 PlayerWidthHeight = {PlayerWidth, PlayerHeight};
+    DrawRectangle(Buffer,
+                  PlayerLeftTop,
+                  PlayerLeftTop + MetersToPixels * PlayerWidthHeight,
                   PlayerR, PlayerG, PlayerB);
 
     hero_bitmaps *HeroBitmaps = &GameState->HeroBitmaps[GameState->HeroFacingDirection];

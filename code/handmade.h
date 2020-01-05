@@ -1,7 +1,6 @@
 #pragma once
 
 #include "handmade_platform.h"
-#include "handmade_tile.h"
 
 inline game_controller_input *GetController(game_input *Input, int unsigned ControllerIndex)
 {
@@ -11,6 +10,7 @@ inline game_controller_input *GetController(game_input *Input, int unsigned Cont
     return (Result);
 }
 
+#include "handmade_math.h"
 #include "handmade_intrinsics.h"
 #include "handmade_tile.h"
 

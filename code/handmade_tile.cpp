@@ -144,8 +144,8 @@ RecanonicalizePosition(tile_map *TileMap, tile_map_position Position)
 {
     tile_map_position Result = Position;
 
-    RecanonicalizeCoord(TileMap, &Result.AbsoluteTileX, &Result.OffsetX);
-    RecanonicalizeCoord(TileMap, &Result.AbsoluteTileY, &Result.OffsetY);
+    RecanonicalizeCoord(TileMap, &Result.AbsoluteTileX, &Result.Offset.X);
+    RecanonicalizeCoord(TileMap, &Result.AbsoluteTileY, &Result.Offset.Y);
 
     return (Result);
 }
@@ -165,12 +165,11 @@ Subtract(tile_map *TileMap, tile_map_position *A, tile_map_position *B)
 {
     tile_map_difference Result;
 
-    real32 dTileX = (real32)A->AbsoluteTileX - (real32)B->AbsoluteTileX;
-    real32 dTileY = (real32)A->AbsoluteTileY - (real32)B->AbsoluteTileY;
+    v2 dTileXY = {(real32)A->AbsoluteTileX - (real32)B->AbsoluteTileX, 
+                  (real32)A->AbsoluteTileY - (real32)B->AbsoluteTileY};
     real32 dTileZ = (real32)A->AbsoluteTileZ - (real32)B->AbsoluteTileZ;
 
-    Result.dX = TileMap->TileSideInMeters * dTileX + (A->OffsetX - B->OffsetX);
-    Result.dY = TileMap->TileSideInMeters * dTileY + (A->OffsetY - B->OffsetY); 
+    Result.dXY = TileMap->TileSideInMeters * dTileXY + (A->Offset - B->Offset);
     Result.dZ = TileMap->TileSideInMeters * dTileZ;
 
     return (Result);
