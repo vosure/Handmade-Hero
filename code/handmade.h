@@ -70,6 +70,7 @@ struct game_state
 
     tile_map_position PlayerPosition;
     tile_map_position CameraPosition;
+    v2 dPlayerP;
 
     loaded_bitmap Backdrop;
 
