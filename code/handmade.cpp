@@ -489,9 +489,47 @@ extern "C" GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             PlayerRight.Offset.X += 0.5f * PlayerWidth;
             PlayerRight = RecanonicalizePosition(TileMap, PlayerRight);
 
-            if (IsTileMapPointEmpty(TileMap, NewPlayerPosition) &&
-                IsTileMapPointEmpty(TileMap, PlayerLeft) &&
-                IsTileMapPointEmpty(TileMap, PlayerRight))
+            bool32 Collided = false;
+            tile_map_position ColP = {};
+            if (!IsTileMapPointEmpty(TileMap, NewPlayerPosition))
+            {
+                ColP = NewPlayerPosition;
+                Collided = true;
+            }
+            if (!IsTileMapPointEmpty(TileMap, PlayerLeft))
+            {
+                ColP = PlayerLeft
+                    Collided = true;
+            }
+            if (!IsTileMapPointEmpty(TileMap, PlayerRight))
+            {
+                ColP = playerRight;
+                Collided = true;
+            }
+
+            if (Collided)
+            {
+                v2 r;
+                if (ColP.AbsoluteTileX < GameState->PlayerPosition.AbsoluteTileX)
+                {
+                    r = v2{1, 0};
+                }
+                if (ColP.AbsoluteTileX > GameState->PlayerPosition.AbsoluteTileX)
+                {
+                    r = v2{-1, 0};
+                }
+                if (ColP.AbsoluteTileY < GameState->PlayerPosition.AbsoluteTileY)
+                {
+                    r = v2{0, 1};
+                }
+                if (ColP.AbsoluteTileY > GameState->PlayerPosition.AbsoluteTileY)
+                {
+                    r = v2{0, -1};
+                }
+
+                GameState->dPlayerP = GameState->dPlayerP - 2 * Inner(GameState->dPlayerP, r) * r;
+            }
+            else
             {
                 if (!AreOnSameTile(&GameState->PlayerPosition, &NewPlayerPosition))
                 {
