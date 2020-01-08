@@ -1,4 +1,16 @@
-#pragma once
+#if !defined(HANDMADE_INTRINSICS_H)
+/* ========================================================================
+   $File: $
+   $Date: $
+   $Revision: $
+   $Creator: Casey Muratori $
+   $Notice: (C) Copyright 2014 by Molly Rocket, Inc. All Rights Reserved. $
+   ======================================================================== */
+
+//
+// TODO(casey): Convert all of these to platform-efficient versions
+// and remove math.h
+//
 
 #include "math.h"
 
@@ -6,49 +18,49 @@ inline int32
 RoundReal32ToInt32(real32 Real32)
 {
     int32 Result = (int32)roundf(Real32);
-    return (Result);
+    return(Result);
 }
 
 inline uint32
 RoundReal32ToUInt32(real32 Real32)
 {
     uint32 Result = (uint32)roundf(Real32);
-    return (Result);
+    return(Result);
 }
 
-inline int32
+inline int32 
 FloorReal32ToInt32(real32 Real32)
 {
     int32 Result = (int32)floorf(Real32);
-    return (Result);
+    return(Result);
 }
 
 inline int32
 TruncateReal32ToInt32(real32 Real32)
 {
-    int32 Result = (int32)(Real32);
-    return (Result);
+    int32 Result = (int32)Real32;
+    return(Result);
 }
 
-inline real32 
+inline real32
 Sin(real32 Angle)
-{   
+{
     real32 Result = sinf(Angle);
-    return (Result);
+    return(Result);
 }
 
-inline real32 
-Cosn(real32 Angle)
-{ 
+inline real32
+Cos(real32 Angle)
+{
     real32 Result = cosf(Angle);
-    return (Result);
+    return(Result);
 }
 
-inline real32 
+inline real32
 ATan2(real32 Y, real32 X)
 {
     real32 Result = atan2f(Y, X);
-    return (Result);
+    return(Result);
 }
 
 struct bit_scan_result
@@ -56,7 +68,6 @@ struct bit_scan_result
     bool32 Found;
     uint32 Index;
 };
-
 inline bit_scan_result
 FindLeastSignificantSetBit(uint32 Value)
 {
@@ -64,17 +75,22 @@ FindLeastSignificantSetBit(uint32 Value)
 
 #if COMPILER_MSVC
     Result.Found = _BitScanForward((unsigned long *)&Result.Index, Value);
-#endif
-
-    for (uint32 Test = 0; Test < 32; ++Test)
+#else
+    for(uint32 Test = 0;
+        Test < 32;
+        ++Test)
     {
-        if (Value & (1 << Test))
+        if(Value & (1 << Test))
         {
             Result.Index = Test;
             Result.Found = true;
             break;
         }
     }
-
-    return (Result);
+#endif
+    
+    return(Result);
 }
+
+#define HANDMADE_INTRINSICS_H
+#endif

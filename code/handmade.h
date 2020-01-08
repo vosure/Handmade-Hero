@@ -1,18 +1,5 @@
 #pragma once
-
 #include "handmade_platform.h"
-
-inline game_controller_input *GetController(game_input *Input, int unsigned ControllerIndex)
-{
-    Assert(ControllerIndex < ArrayCount(Input->Controllers));
-
-    game_controller_input *Result = &Input->Controllers[ControllerIndex];
-    return (Result);
-}
-
-#include "handmade_math.h"
-#include "handmade_intrinsics.h"
-#include "handmade_tile.h"
 
 struct memory_arena
 {
@@ -30,19 +17,23 @@ InitializeArena(memory_arena *Arena, memory_index Size, uint8 *Base)
 }
 
 #define PushStruct(Arena, type) (type *)PushSize_(Arena, sizeof(type))
-#define PushArray(Arena, Count, type) (type *)PushSize_(Arena, (Count) * sizeof(type))
+#define PushArray(Arena, Count, type) (type *)PushSize_(Arena, (Count)*sizeof(type))
 void *
 PushSize_(memory_arena *Arena, memory_index Size)
 {
-    Assert((Arena->Used + Size) < Arena->Size);
+    Assert((Arena->Used + Size) <= Arena->Size);
     void *Result = Arena->Base + Arena->Used;
     Arena->Used += Size;
-
-    return (Result);
+    
+    return(Result);
 }
 
+#include "handmade_math.h"
+#include "handmade_intrinsics.h"
+#include "handmade_tile.h"
+
 struct world
-{
+{    
     tile_map *TileMap;
 };
 
@@ -57,7 +48,6 @@ struct hero_bitmaps
 {
     int32 AlignX;
     int32 AlignY;
-
     loaded_bitmap Head;
     loaded_bitmap Cape;
     loaded_bitmap Torso;
@@ -67,13 +57,12 @@ struct game_state
 {
     memory_arena WorldArena;
     world *World;
-
-    tile_map_position PlayerPosition;
-    tile_map_position CameraPosition;
+    
+    tile_map_position CameraP;
+    tile_map_position PlayerP;
     v2 dPlayerP;
 
     loaded_bitmap Backdrop;
-
     uint32 HeroFacingDirection;
     hero_bitmaps HeroBitmaps[4];
 };
