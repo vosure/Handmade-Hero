@@ -1,18 +1,30 @@
-#if !defined(HANDMADE_INTRINSICS_H)
-/* ========================================================================
-   $File: $
-   $Date: $
-   $Revision: $
-   $Creator: Casey Muratori $
-   $Notice: (C) Copyright 2014 by Molly Rocket, Inc. All Rights Reserved. $
-   ======================================================================== */
-
-//
-// TODO(casey): Convert all of these to platform-efficient versions
-// and remove math.h
-//
+#pragma once
 
 #include "math.h"
+
+inline real32
+AbsoluteValue(real32 Real32)
+{
+    real32 Result = fabs(Real32);
+
+    return (Result);
+}
+
+inline uint32
+RotateLeft(uint32 Value, int32 Amount)
+{
+    uint32 Result = _rotl(Value, Amount);
+
+    return (Result);
+}
+
+inline uint32
+RotateRight(uint32 Value, int32 Amount)
+{
+    uint32 Result = _rotr(Value, Amount);
+
+    return (Result);
+}
 
 inline int32
 RoundReal32ToInt32(real32 Real32)
@@ -91,6 +103,3 @@ FindLeastSignificantSetBit(uint32 Value)
     
     return(Result);
 }
-
-#define HANDMADE_INTRINSICS_H
-#endif

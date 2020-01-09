@@ -1,11 +1,4 @@
-#if !defined(HANDMADE_MATH_H)
-/* ========================================================================
-   $File: $
-   $Date: $
-   $Revision: $
-   $Creator: Casey Muratori $
-   $Notice: (C) Copyright 2014 by Molly Rocket, Inc. All Rights Reserved. $
-   ======================================================================== */
+#pragma once
 
 union v2
 {
@@ -16,7 +9,6 @@ union v2
     real32 E[2];
 };
 
-// TODO(casey): Consider v2 A = v2{5, 3}; ?
 inline v2
 V2(real32 X, real32 Y)
 {
@@ -119,6 +111,3 @@ LengthSq(v2 A)
 
     return(Result);
 }
-
-#define HANDMADE_MATH_H
-#endif
