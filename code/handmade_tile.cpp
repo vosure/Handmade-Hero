@@ -145,8 +145,8 @@ RecanonicalizeCoord(tile_map *TileMap, uint32 *Tile, real32 *TileRel)
     *Tile += Offset;
     *TileRel -= Offset*TileMap->TileSideInMeters;
 
-    Assert(*TileRel >= -0.5f*TileMap->TileSideInMeters);
-    Assert(*TileRel <= 0.5f*TileMap->TileSideInMeters);
+    Assert(*TileRel > -0.5001f*TileMap->TileSideInMeters);
+    Assert(*TileRel < 0.5001f*TileMap->TileSideInMeters);
 }
 
 inline tile_map_position
