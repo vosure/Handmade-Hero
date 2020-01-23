@@ -1,5 +1,3 @@
-#pragma once
-
 inline tile_chunk *
 GetTileChunk(tile_map *TileMap, uint32 TileChunkX, uint32 TileChunkY, uint32 TileChunkZ)
 {
@@ -138,13 +136,24 @@ SetTileValue(memory_arena *Arena, tile_map *TileMap,
     SetTileValue(TileMap, TileChunk, ChunkPos.RelTileX, ChunkPos.RelTileY, TileValue);
 }
 
+//
+// TODO(casey): Do these really belong in more of a "positioning" or "geometry" file?
+//
+
 inline void
 RecanonicalizeCoord(tile_map *TileMap, uint32 *Tile, real32 *TileRel)
 {
+    // TODO(casey): Need to do something that doesn't use the divide/multiply method
+    // for recanonicalizing because this can end up rounding back on to the tile
+    // you just came from.
+
+    // NOTE(casey): TileMap is assumed to be toroidal topology, if you
+    // step off one end you come back on the other!
     int32 Offset = RoundReal32ToInt32(*TileRel / TileMap->TileSideInMeters);
     *Tile += Offset;
     *TileRel -= Offset*TileMap->TileSideInMeters;
 
+    // TODO(casey): Fix floating point math so this can be exact?
     Assert(*TileRel > -0.5001f*TileMap->TileSideInMeters);
     Assert(*TileRel < 0.5001f*TileMap->TileSideInMeters);
 }
@@ -154,8 +163,8 @@ RecanonicalizePosition(tile_map *TileMap, tile_map_position Pos)
 {
     tile_map_position Result = Pos;
 
-    RecanonicalizeCoord(TileMap, &Result.AbsTileX, &Result.Offset.X);
-    RecanonicalizeCoord(TileMap, &Result.AbsTileY, &Result.Offset.Y);
+    RecanonicalizeCoord(TileMap, &Result.AbsTileX, &Result.Offset_.X);
+    RecanonicalizeCoord(TileMap, &Result.AbsTileY, &Result.Offset_.Y);
     
     return(Result);
 }
@@ -179,8 +188,9 @@ Subtract(tile_map *TileMap, tile_map_position *A, tile_map_position *B)
                   (real32)A->AbsTileY - (real32)B->AbsTileY};
     real32 dTileZ = (real32)A->AbsTileZ - (real32)B->AbsTileZ;
     
-    Result.dXY = TileMap->TileSideInMeters*dTileXY + (A->Offset - B->Offset);
+    Result.dXY = TileMap->TileSideInMeters*dTileXY + (A->Offset_ - B->Offset_);
 
+    // TODO(casey): Think about what we want to do about Z
     Result.dZ = TileMap->TileSideInMeters*dTileZ;
 
     return(Result);
@@ -196,4 +206,13 @@ CenteredTilePoint(uint32 AbsTileX, uint32 AbsTileY, uint32 AbsTileZ)
     Result.AbsTileZ = AbsTileZ;
 
     return(Result);
+}
+
+inline tile_map_position
+Offset(tile_map *TileMap, tile_map_position P, v2 Offset)
+{
+    P.Offset_ += Offset;
+    P = RecanonicalizePosition(TileMap, P);
+
+    return(P);
 }

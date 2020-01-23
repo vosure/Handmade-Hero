@@ -2,20 +2,25 @@
 
 #include "math.h"
 
+inline int32
+SignOf(int32 Value)
+{
+    int32 Result = (Value >= 0) ? 1 : -1;
+    return(Result);
+}
+
 inline real32
 SquareRoot(real32 Real32)
 {
     real32 Result = sqrtf(Real32);
-
-    return (Result);
+    return(Result);
 }
 
 inline real32
 AbsoluteValue(real32 Real32)
 {
     real32 Result = fabs(Real32);
-
-    return (Result);
+    return(Result);
 }
 
 inline uint32
@@ -23,7 +28,7 @@ RotateLeft(uint32 Value, int32 Amount)
 {
     uint32 Result = _rotl(Value, Amount);
 
-    return (Result);
+    return(Result);
 }
 
 inline uint32
@@ -31,7 +36,7 @@ RotateRight(uint32 Value, int32 Amount)
 {
     uint32 Result = _rotr(Value, Amount);
 
-    return (Result);
+    return(Result);
 }
 
 inline int32

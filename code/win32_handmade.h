@@ -1,4 +1,5 @@
 #pragma once
+
 struct win32_offscreen_buffer
 {
     // NOTE(vosure): Pixels are alwasy 32-bits wide, Memory Order BB GG RR XX

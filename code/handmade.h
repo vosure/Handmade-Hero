@@ -1,8 +1,13 @@
 #pragma once
+
 #include "handmade_platform.h"
 
 #define Minimum(A, B) ((A < B) ? (A) : (B))
 #define Maximum(A, B) ((A > B) ? (A) : (B))
+
+//
+//
+//
 
 struct memory_arena
 {
@@ -62,7 +67,6 @@ struct entity
     tile_map_position P;
     v2 dP;
     uint32 FacingDirection;
-
     real32 Width, Height;
 };
 
@@ -70,7 +74,8 @@ struct game_state
 {
     memory_arena WorldArena;
     world *World;
-    
+
+    // TODO(casey): Should we allow split-screen?
     uint32 CameraFollowingEntityIndex;
     tile_map_position CameraP;
 
