@@ -1,5 +1,5 @@
 #pragma once
-
+// TODO(vosure): Replace this with a v3 once we get to v3
 struct tile_map_difference
 {
     v2 dXY;
@@ -8,14 +8,14 @@ struct tile_map_difference
 
 struct tile_map_position
 {
-    // NOTE(casey): These are fixed point tile locations.  The high
+    // NOTE(vosure): These are fixed point tile locations.  The high
     // bits are the tile chunk index, and the low bits are the tile
     // index in the chunk.
     uint32 AbsTileX;
     uint32 AbsTileY;
     uint32 AbsTileZ;
 
-    // NOTE(casey): These are the offsets from the tile center
+    // NOTE(vosure): These are the offsets from the tile center
     v2 Offset_;
 };
 
@@ -31,7 +31,7 @@ struct tile_chunk_position
 
 struct tile_chunk
 {
-    // TODO(casey): Real structure for a tile!
+    // TODO(vosure): Real structure for a tile!
     uint32 *Tiles;
 };
 
@@ -43,7 +43,7 @@ struct tile_map
     
     real32 TileSideInMeters;
 
-    // TODO(casey): REAL sparseness so anywhere in the world can be
+    // TODO(vosure): REAL sparseness so anywhere in the world can be
     // represented without the giant pointer array.
     uint32 TileChunkCountX;
     uint32 TileChunkCountY;

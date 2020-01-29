@@ -1,5 +1,4 @@
 #pragma once
-
 #include "math.h"
 
 inline int32
@@ -26,7 +25,12 @@ AbsoluteValue(real32 Real32)
 inline uint32
 RotateLeft(uint32 Value, int32 Amount)
 {
+#if COMPILER_MSVC
     uint32 Result = _rotl(Value, Amount);
+#else
+    Amount &= 31;
+    uint32 Result = ((Value << Amount) | (Value >> (32 - Amount)));
+#endif
 
     return(Result);
 }
@@ -34,7 +38,12 @@ RotateLeft(uint32 Value, int32 Amount)
 inline uint32
 RotateRight(uint32 Value, int32 Amount)
 {
+#if COMPILER_MSVC
     uint32 Result = _rotr(Value, Amount);
+#else
+    Amount &= 31;
+    uint32 Result = ((Value >> Amount) | (Value << (32 - Amount)));
+#endif
 
     return(Result);
 }
@@ -57,6 +66,13 @@ inline int32
 FloorReal32ToInt32(real32 Real32)
 {
     int32 Result = (int32)floorf(Real32);
+    return(Result);
+}
+
+inline int32 
+CeilReal32ToInt32(real32 Real32)
+{
+    int32 Result = (int32)ceilf(Real32);
     return(Result);
 }
 

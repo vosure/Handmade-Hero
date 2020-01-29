@@ -1,4 +1,4 @@
-#pragma once
+#pragma once 
 
 struct win32_offscreen_buffer
 {

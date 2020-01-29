@@ -4,10 +4,7 @@
 extern "C" {
 #endif
 
-//
-// NOTE(casey): Compilers
-//
-    
+
 #if !defined(COMPILER_MSVC)
 #define COMPILER_MSVC 0
 #endif
@@ -21,7 +18,7 @@ extern "C" {
 #undef COMPILER_MSVC
 #define COMPILER_MSVC 1
 #else
-// TODO(casey): Moar compilerz!!!
+
 #undef COMPILER_LLVM
 #define COMPILER_LLVM 1
 #endif
@@ -32,7 +29,7 @@ extern "C" {
 #endif
     
 //
-// NOTE(casey): Types
+// NOTE(vosure): Types
 //
 #include <stdint.h>
 #include <stddef.h>
@@ -60,7 +57,7 @@ typedef double real64;
 #define Pi32 3.14159265359f
 
 #if HANDMADE_SLOW
-// TODO(casey): Complete assertion macro - don't worry everyone!
+// TODO(vosure): Complete assertion macro - don't worry everyone!
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 #else
 #define Assert(Expression)
@@ -72,12 +69,12 @@ typedef double real64;
 #define Terabytes(Value) (Gigabytes(Value)*1024LL)
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
-// TODO(casey): swap, min, max ... macros???
+// TODO(vosure): swap, min, max ... macros???
 
 inline uint32
 SafeTruncateUInt64(uint64 Value)
 {
-    // TODO(casey): Defines for maximum values
+    // TODO(vosure): Defines for maximum values
     Assert(Value <= 0xFFFFFFFF);
     uint32 Result = (uint32)Value;
     return(Result);
@@ -89,10 +86,10 @@ typedef struct thread_context
 } thread_context;
 
 /*
-  NOTE(casey): Services that the platform layer provides to the game
+  NOTE(vosure): Services that the platform layer provides to the game
 */
 #if HANDMADE_INTERNAL
-/* IMPORTANT(casey):
+/* IMPORTANT(vosure):
 
    These are NOT for doing anything in the shipping game - they are
    blocking and the write doesn't protect against lost data!
@@ -115,16 +112,16 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
 
 /*
-  NOTE(casey): Services that the game provides to the platform layer.
+  NOTE(vosure): Services that the game provides to the platform layer.
   (this may expand in the future - sound on separate thread, etc.)
 */
 
 // FOUR THINGS - timing, controller/keyboard input, bitmap buffer to use, sound buffer to use
 
-// TODO(casey): In the future, rendering _specifically_ will become a three-tiered abstraction!!!
+// TODO(vosure): In the future, rendering _specifically_ will become a three-tiered abstraction!!!
 typedef struct game_offscreen_buffer
 {
-    // NOTE(casey): Pixels are alwasy 32-bits wide, Memory Order BB GG RR XX
+    // NOTE(vosure): Pixels are alwasy 32-bits wide, Memory Order BB GG RR XX
     void *Memory;
     int Width;
     int Height;
@@ -173,7 +170,7 @@ typedef struct game_controller_input
             game_button_state Back;
             game_button_state Start;
 
-            // NOTE(casey): All buttons must be added above this line
+            // NOTE(vosure): All buttons must be added above this line
             
             game_button_state Terminator;
         };
@@ -195,10 +192,10 @@ typedef struct game_memory
     bool32 IsInitialized;
 
     uint64 PermanentStorageSize;
-    void *PermanentStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+    void *PermanentStorage; // NOTE(vosure): REQUIRED to be cleared to zero at startup
 
     uint64 TransientStorageSize;
-    void *TransientStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+    void *TransientStorage; // NOTE(vosure): REQUIRED to be cleared to zero at startup
 
     debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
     debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
@@ -208,9 +205,9 @@ typedef struct game_memory
 #define GAME_UPDATE_AND_RENDER(name) void name(thread_context *Thread, game_memory *Memory, game_input *Input, game_offscreen_buffer *Buffer)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 
-// NOTE(casey): At the moment, this has to be a very fast function, it cannot be
+// NOTE(vosure): At the moment, this has to be a very fast function, it cannot be
 // more than a millisecond or so.
-// TODO(casey): Reduce the pressure on this function's performance by measuring it
+// TODO(vosure): Reduce the pressure on this function's performance by measuring it
 // or asking about it, etc.
 #define GAME_GET_SOUND_SAMPLES(name) void name(thread_context *Thread, game_memory *Memory, game_sound_output_buffer *SoundBuffer)
 typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples);
